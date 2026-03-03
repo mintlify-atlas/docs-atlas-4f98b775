@@ -1,0 +1,109 @@
+---
+title: "Retrieve a list of folders"
+description: "Retrieve a list of folders for the authenticated workspace"
+---
+
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.dub.co/folders?page=1&pageSize=50" \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+import { Dub } from 'dub';
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+const folders = await dub.folders.list({
+  page: 1,
+  pageSize: 50,
+});
+```
+
+```python Python
+from dub import Dub
+
+dub = Dub(token=os.environ['DUB_API_KEY'])
+
+folders = dub.folders.list(
+  page=1,
+  page_size=50,
+)
+```
+</CodeGroup>
+
+## Query Parameters
+
+<ParamField query="search" type="string">
+  The search term to filter the folders by.
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  The page number for pagination.
+</ParamField>
+
+<ParamField query="pageSize" type="number" default="50">
+  The number of items per page. Maximum: 50
+</ParamField>
+
+## Response
+
+Returns an array of folder objects.
+
+<ResponseField name="id" type="string">
+  The unique ID of the folder.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The name of the folder.
+</ResponseField>
+
+<ResponseField name="description" type="string | null">
+  The description of the folder.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  The type of the folder.
+</ResponseField>
+
+<ResponseField name="accessLevel" type="string | null">
+  The access level of the folder within the workspace.
+</ResponseField>
+
+<ResponseField name="createdAt" type="date">
+  The date the folder was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="date">
+  The date the folder was updated.
+</ResponseField>
+
+<ResponseExample>
+```json 200 OK
+[
+  {
+    "id": "fold_abc123",
+    "name": "Marketing Campaigns",
+    "description": "Links for marketing campaigns",
+    "type": "folder",
+    "accessLevel": "write",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "fold_xyz789",
+    "name": "Product Launch",
+    "description": "Product launch related links",
+    "type": "folder",
+    "accessLevel": "read",
+    "createdAt": "2024-01-15T00:00:00.000Z",
+    "updatedAt": "2024-01-15T00:00:00.000Z"
+  }
+]
+```
+</ResponseExample>

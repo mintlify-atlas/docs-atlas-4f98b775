@@ -1,0 +1,52 @@
+---
+title: "Delete a tag"
+description: "Delete a tag from the workspace. All existing links will still work, but they will no longer be associated with this tag."
+---
+
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.dub.co/tags/tag_abc123 \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+import { Dub } from 'dub';
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+const result = await dub.tags.delete('tag_abc123');
+```
+
+```python Python
+from dub import Dub
+
+dub = Dub(token=os.environ['DUB_API_KEY'])
+
+result = dub.tags.delete('tag_abc123')
+```
+</CodeGroup>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the tag to delete.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  The ID of the deleted tag.
+</ResponseField>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "tag_abc123"
+}
+```
+</ResponseExample>

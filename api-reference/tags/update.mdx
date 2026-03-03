@@ -1,0 +1,90 @@
+---
+title: "Update a tag"
+description: "Update a tag in the workspace"
+---
+
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.dub.co/tags/tag_abc123 \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Digital Marketing",
+    "color": "purple"
+  }'
+```
+
+```typescript TypeScript
+import { Dub } from 'dub';
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+const tag = await dub.tags.update('tag_abc123', {
+  name: 'Digital Marketing',
+  color: 'purple',
+});
+```
+
+```python Python
+from dub import Dub
+
+dub = Dub(token=os.environ['DUB_API_KEY'])
+
+tag = dub.tags.update(
+  'tag_abc123',
+  name='Digital Marketing',
+  color='purple',
+)
+```
+</CodeGroup>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the tag to update.
+</ParamField>
+
+## Request Body
+
+All fields are optional. Only include the fields you want to update.
+
+<ParamField body="name" type="string">
+  The name of the tag.
+  
+  Minimum length: 1, Maximum length: 50
+</ParamField>
+
+<ParamField body="color" type="string">
+  The color of the tag.
+  
+  Available colors: `red`, `yellow`, `green`, `blue`, `purple`, `pink`, `brown`
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  The unique ID of the tag.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The name of the tag.
+</ResponseField>
+
+<ResponseField name="color" type="string">
+  The color of the tag.
+</ResponseField>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "tag_abc123",
+  "name": "Digital Marketing",
+  "color": "purple"
+}
+```
+</ResponseExample>

@@ -1,0 +1,106 @@
+---
+title: "Retrieve a list of tags"
+description: "Retrieve a list of tags for the authenticated workspace"
+---
+
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.dub.co/tags?page=1&pageSize=100" \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+import { Dub } from 'dub';
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+const tags = await dub.tags.list({
+  page: 1,
+  pageSize: 100,
+});
+```
+
+```python Python
+from dub import Dub
+
+dub = Dub(token=os.environ['DUB_API_KEY'])
+
+tags = dub.tags.list(
+  page=1,
+  page_size=100,
+)
+```
+</CodeGroup>
+
+## Query Parameters
+
+<ParamField query="sortBy" type="string" default="name">
+  The field to sort the tags by.
+  
+  Options: `name`, `createdAt`
+</ParamField>
+
+<ParamField query="sortOrder" type="string" default="asc">
+  The order to sort the tags by.
+  
+  Options: `asc`, `desc`
+</ParamField>
+
+<ParamField query="search" type="string">
+  The search term to filter the tags by.
+</ParamField>
+
+<ParamField query="ids" type="string | string[]">
+  IDs of tags to filter by. Can be a single ID or comma-separated list.
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  The page number for pagination.
+</ParamField>
+
+<ParamField query="pageSize" type="number" default="100">
+  The number of items per page. Maximum: 100
+</ParamField>
+
+## Response
+
+Returns an array of tag objects.
+
+<ResponseField name="id" type="string">
+  The unique ID of the tag.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The name of the tag.
+</ResponseField>
+
+<ResponseField name="color" type="string">
+  The color of the tag.
+</ResponseField>
+
+<ResponseExample>
+```json 200 OK
+[
+  {
+    "id": "tag_abc123",
+    "name": "Marketing",
+    "color": "blue"
+  },
+  {
+    "id": "tag_xyz789",
+    "name": "Sales",
+    "color": "green"
+  },
+  {
+    "id": "tag_def456",
+    "name": "Product",
+    "color": "purple"
+  }
+]
+```
+</ResponseExample>

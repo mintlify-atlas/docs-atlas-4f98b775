@@ -1,0 +1,244 @@
+---
+title: List Customers
+description: Retrieve a list of customers for the authenticated workspace
+---
+
+## Endpoint
+
+<ParamField path="method" type="string">
+  GET
+</ParamField>
+
+<ParamField path="url" type="string">
+  https://api.dub.co/customers
+</ParamField>
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+```bash
+Authorization: Bearer DUB_API_KEY
+```
+
+## Query Parameters
+
+<ParamField query="email" type="string">
+  A case-sensitive filter on the list based on the customer's `email` field. The value must be a string. Takes precedence over `externalId`.
+</ParamField>
+
+<ParamField query="externalId" type="string">
+  A case-sensitive filter on the list based on the customer's `externalId` field. The value must be a string. Takes precedence over `search`.
+</ParamField>
+
+<ParamField query="search" type="string">
+  A search query to filter customers by email, externalId, or name. If `email` or `externalId` is provided, this will be ignored.
+</ParamField>
+
+<ParamField query="country" type="string">
+  A filter on the list based on the customer's `country` field.
+</ParamField>
+
+<ParamField query="linkId" type="string">
+  A filter on the list based on the customer's `linkId` field (the referral link ID).
+</ParamField>
+
+<ParamField query="programId" type="string">
+  Program ID to filter by.
+</ParamField>
+
+<ParamField query="partnerId" type="string">
+  Partner ID to filter by.
+</ParamField>
+
+<ParamField query="includeExpandedFields" type="boolean">
+  Whether to include expanded fields on the customer (`link`, `partner`, `discount`).
+</ParamField>
+
+<ParamField query="sortBy" type="enum" default="createdAt">
+  The field to sort the customers by.
+  
+  Options: `createdAt`, `saleAmount`, `firstSaleAt`, `subscriptionCanceledAt`
+</ParamField>
+
+<ParamField query="sortOrder" type="enum" default="desc">
+  The sort order.
+  
+  Options: `asc`, `desc`
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  The page number for pagination.
+</ParamField>
+
+<ParamField query="pageSize" type="number" default="50">
+  The number of items per page. Maximum: 100
+</ParamField>
+
+## Response
+
+Returns an array of customer objects.
+
+<ResponseField name="id" type="string">
+  The unique ID of the customer
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the customer
+</ResponseField>
+
+<ResponseField name="email" type="string | null">
+  Email of the customer
+</ResponseField>
+
+<ResponseField name="avatar" type="string | null">
+  Avatar URL of the customer
+</ResponseField>
+
+<ResponseField name="externalId" type="string">
+  Unique identifier for the customer in the client's app
+</ResponseField>
+
+<ResponseField name="stripeCustomerId" type="string | null">
+  The customer's Stripe customer ID
+</ResponseField>
+
+<ResponseField name="country" type="string | null">
+  Country of the customer
+</ResponseField>
+
+<ResponseField name="sales" type="number | null">
+  Total number of sales for the customer
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number | null">
+  Total amount of sales for the customer
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  The date the customer was created
+</ResponseField>
+
+<ResponseField name="firstSaleAt" type="string | null">
+  The date the customer made their first sale
+</ResponseField>
+
+<ResponseField name="subscriptionCanceledAt" type="string | null">
+  The date the customer canceled their subscription
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET https://api.dub.co/customers \
+  -H "Authorization: Bearer DUB_API_KEY"
+```
+
+```bash cURL (with filters)
+curl -X GET "https://api.dub.co/customers?country=US&sortBy=saleAmount&sortOrder=desc&pageSize=20" \
+  -H "Authorization: Bearer DUB_API_KEY"
+```
+
+```bash cURL (search by email)
+curl -X GET "https://api.dub.co/customers?email=john@example.com" \
+  -H "Authorization: Bearer DUB_API_KEY"
+```
+
+```typescript TypeScript SDK
+import { Dub } from 'dub';
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const customers = await dub.customers.list();
+```
+
+```typescript TypeScript SDK (with filters)
+import { Dub } from 'dub';
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const customers = await dub.customers.list({
+  country: 'US',
+  sortBy: 'saleAmount',
+  sortOrder: 'desc',
+  pageSize: 20,
+});
+```
+
+```python Python SDK
+from dub import Dub
+
+dub = Dub(token=os.environ["DUB_API_KEY"])
+
+customers = dub.customers.list()
+```
+
+```python Python SDK (with filters)
+from dub import Dub
+
+dub = Dub(token=os.environ["DUB_API_KEY"])
+
+customers = dub.customers.list(
+    country="US",
+    sort_by="saleAmount",
+    sort_order="desc",
+    page_size=20
+)
+```
+
+```go Go SDK
+import (
+    "context"
+    "github.com/dubinc/dub-go"
+    "github.com/dubinc/dub-go/models/operations"
+)
+
+client := dub.New(
+    dub.WithSecurity(os.Getenv("DUB_API_KEY")),
+)
+
+customers, err := client.Customers.List(context.Background(), &operations.ListCustomersRequest{})
+```
+
+</CodeGroup>
+
+## Response Example
+
+```json
+[
+  {
+    "id": "cus_xyz123",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "avatar": "https://example.com/avatar.jpg",
+    "externalId": "user_123456",
+    "stripeCustomerId": "cus_stripe123",
+    "country": "US",
+    "sales": 3,
+    "saleAmount": 14997,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "firstSaleAt": "2024-01-20T14:22:00.000Z",
+    "subscriptionCanceledAt": null
+  },
+  {
+    "id": "cus_abc456",
+    "name": "Jane Smith",
+    "email": "jane@example.com",
+    "avatar": null,
+    "externalId": "user_789012",
+    "stripeCustomerId": null,
+    "country": "CA",
+    "sales": 1,
+    "saleAmount": 2999,
+    "createdAt": "2024-01-16T08:15:00.000Z",
+    "firstSaleAt": "2024-01-18T11:30:00.000Z",
+    "subscriptionCanceledAt": null
+  }
+]
+```

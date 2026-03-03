@@ -1,0 +1,506 @@
+---
+title: Analytics
+description: Track clicks, leads, sales, and conversions with powerful real-time analytics and filtering capabilities.
+---
+
+## Overview
+
+Dub provides comprehensive analytics to help you understand how your links are performing. Track clicks, leads, sales, and conversions across multiple dimensions including geography, devices, browsers, referrers, and more.
+
+## Analytics Events
+
+Dub tracks four types of events:
+
+<CardGroup cols={2}>
+  <Card title="Clicks" icon="mouse-pointer">
+    Every time someone clicks on your short link. This is the default event type.
+  </Card>
+  
+  <Card title="Leads" icon="user-plus">
+    When a user completes a lead event (e.g., signs up, submits a form).
+  </Card>
+  
+  <Card title="Sales" icon="dollar-sign">
+    When a conversion results in a sale or purchase.
+  </Card>
+  
+  <Card title="Conversions" icon="chart-line">
+    When a lead converts to a customer or completes a desired action.
+  </Card>
+</CardGroup>
+
+## Viewing Analytics
+
+### Dashboard Analytics
+
+<Steps>
+  <Step title="Navigate to Analytics">
+    Click "Analytics" in the sidebar to view your workspace analytics.
+  </Step>
+  
+  <Step title="Select Time Range">
+    Choose a time range from the presets (24h, 7d, 30d, 90d, all time) or set custom dates.
+  </Step>
+  
+  <Step title="Apply Filters">
+    Filter by links, domains, tags, folders, countries, devices, and more.
+  </Step>
+  
+  <Step title="View Metrics">
+    Analyze your data through charts, time series, and breakdowns by dimension.
+  </Step>
+</Steps>
+
+### Link-Specific Analytics
+
+View analytics for a specific link:
+
+1. Go to the Links page
+2. Click on any link to open the link editor
+3. Click the "Analytics" tab
+4. View detailed metrics for that specific link
+
+## Analytics Dimensions
+
+### Geographic Analytics
+
+Breakdown clicks by location:
+
+<Tabs>
+  <Tab title="Country">
+    View analytics by 2-letter ISO 3166-1 country codes.
+    
+    ```typescript
+    // API Example: Get clicks by country
+    const analytics = await fetch(
+      '/api/analytics?event=clicks&groupBy=countries&interval=30d'
+    );
+    ```
+  </Tab>
+  
+  <Tab title="City">
+    Drill down to city-level analytics.
+    
+    ```typescript
+    // API Example: Get clicks by city
+    const analytics = await fetch(
+      '/api/analytics?event=clicks&groupBy=cities&country=US'
+    );
+    ```
+  </Tab>
+  
+  <Tab title="Region">
+    View by region/state using ISO 3166-2 codes.
+    
+    ```typescript
+    // API Example: Get clicks by region
+    const analytics = await fetch(
+      '/api/analytics?event=clicks&groupBy=regions&country=US'
+    );
+    ```
+  </Tab>
+  
+  <Tab title="Continent">
+    High-level breakdown by continent (AF, AN, AS, EU, NA, OC, SA).
+    
+    ```typescript
+    // API Example: Get clicks by continent
+    const analytics = await fetch(
+      '/api/analytics?event=clicks&groupBy=continents'
+    );
+    ```
+  </Tab>
+</Tabs>
+
+### Device Analytics
+
+Understand what devices your users are on:
+
+```typescript
+// API Example: Get analytics by device type
+const analytics = await fetch(
+  '/api/analytics?event=clicks&groupBy=devices&interval=7d'
+);
+
+// Returns: Desktop, Mobile, Tablet
+```
+
+<Info>
+Device targeting allows you to redirect users to device-specific URLs based on this data.
+</Info>
+
+### Browser Analytics
+
+Track which browsers your users prefer:
+
+```typescript
+// API Example: Get analytics by browser
+const analytics = await fetch(
+  '/api/analytics?event=clicks&groupBy=browsers&interval=30d'
+);
+
+// Returns: Chrome, Firefox, Safari, Edge, etc.
+```
+
+### Operating System
+
+View breakdown by operating system:
+
+```typescript
+// API Example: Get analytics by OS
+const analytics = await fetch(
+  '/api/analytics?event=clicks&groupBy=os&interval=30d'
+);
+
+// Returns: Windows, Mac, iOS, Android, Linux, etc.
+```
+
+### Referrer Analytics
+
+See where your traffic is coming from:
+
+<Tabs>
+  <Tab title="Referrer Hostname">
+    ```typescript
+    // Get top referring domains
+    const analytics = await fetch(
+      '/api/analytics?event=clicks&groupBy=referers'
+    );
+    
+    // Returns: google.com, twitter.com, facebook.com, etc.
+    ```
+  </Tab>
+  
+  <Tab title="Full Referrer URL">
+    ```typescript
+    // Get full referrer URLs for detailed analysis
+    const analytics = await fetch(
+      '/api/analytics?event=clicks&groupBy=referer_urls'
+    );
+    ```
+  </Tab>
+</Tabs>
+
+### UTM Analytics
+
+Track campaign performance with UTM parameters:
+
+```typescript
+// Example: Filter by UTM parameters
+const analytics = await fetch(
+  '/api/analytics?event=clicks&utm_source=twitter&utm_campaign=summer_sale'
+);
+
+// Group by UTM source
+const bySource = await fetch(
+  '/api/analytics?event=clicks&groupBy=utm_sources'
+);
+
+// Group by UTM medium
+const byMedium = await fetch(
+  '/api/analytics?event=clicks&groupBy=utm_mediums'
+);
+
+// Group by UTM campaign
+const byCampaign = await fetch(
+  '/api/analytics?event=clicks&groupBy=utm_campaigns'
+);
+```
+
+### Trigger Analytics
+
+Understand how users are accessing your links:
+
+```typescript
+// API Example: Get analytics by trigger type
+const analytics = await fetch(
+  '/api/analytics?event=clicks&groupBy=triggers'
+);
+
+// Returns breakdown by:
+// - link: Direct link clicks
+// - qr: QR code scans
+// - pageview: Page views (for analytics dashboards)
+```
+
+<Note>
+QR code scans are automatically tracked when users scan QR codes generated by Dub.
+</Note>
+
+## Advanced Filtering
+
+### Filter by Multiple Values
+
+Use comma-separated values to filter by multiple items:
+
+```typescript
+// Example: Filter by multiple countries
+const analytics = await fetch(
+  '/api/analytics?event=clicks&country=US,GB,CA'
+);
+
+// Filter by multiple link IDs
+const linkAnalytics = await fetch(
+  '/api/analytics?event=clicks&linkId=link_123,link_456,link_789'
+);
+```
+
+### Exclusion Filters
+
+Exclude specific values using the `-` prefix:
+
+```typescript
+// Example: Exclude specific country
+const analytics = await fetch(
+  '/api/analytics?event=clicks&country=-US'
+);
+
+// Exclude multiple countries
+const filtered = await fetch(
+  '/api/analytics?event=clicks&country=-US,-GB,-CA'
+);
+
+// Exclude spam referrers
+const cleanReferrers = await fetch(
+  '/api/analytics?event=clicks&referer=-spam.com,-bot.net'
+);
+```
+
+### Filter by Link Properties
+
+```typescript
+// Filter by domain
+const domainAnalytics = await fetch(
+  '/api/analytics?event=clicks&domain=dub.sh'
+);
+
+// Filter by tag
+const tagAnalytics = await fetch(
+  '/api/analytics?event=clicks&tagId=tag_123'
+);
+
+// Filter by folder
+const folderAnalytics = await fetch(
+  '/api/analytics?event=clicks&folderId=folder_456'
+);
+
+// Filter by external ID
+const externalAnalytics = await fetch(
+  '/api/analytics?event=clicks&externalId=ext_campaign_001'
+);
+
+// Filter by tenant ID (multi-tenancy)
+const tenantAnalytics = await fetch(
+  '/api/analytics?event=clicks&tenantId=tenant_acme'
+);
+```
+
+## Time Series Analytics
+
+View analytics over time with different granularities:
+
+```typescript
+// Example: Get daily time series for the last 30 days
+const timeseries = await fetch(
+  '/api/analytics?event=clicks&groupBy=timeseries&interval=30d'
+);
+
+// Custom date range with specific granularity
+const custom = await fetch(
+  '/api/analytics?' +
+  'event=clicks&' +
+  'groupBy=timeseries&' +
+  'start=2024-01-01&' +
+  'end=2024-01-31&' +
+  'granularity=day&' +
+  'timezone=America/New_York'
+);
+```
+
+Supported granularities:
+- `minute` - Minute-by-minute data
+- `hour` - Hourly aggregation
+- `day` - Daily aggregation (default)
+- `month` - Monthly aggregation
+
+<Info>
+Specify timezone using IANA time zone codes (e.g., `America/New_York`) to align data with your local time.
+</Info>
+
+## Top Links Analytics
+
+View your best-performing links:
+
+```typescript
+// Example: Get top links by clicks
+const topLinks = await fetch(
+  '/api/analytics?event=clicks&groupBy=top_links&interval=30d'
+);
+
+// Get top destination URLs
+const topUrls = await fetch(
+  '/api/analytics?event=clicks&groupBy=top_urls&interval=30d'
+);
+
+// Get top folders
+const topFolders = await fetch(
+  '/api/analytics?event=clicks&groupBy=top_folders&interval=30d'
+);
+
+// Get top tags
+const topTags = await fetch(
+  '/api/analytics?event=clicks&groupBy=top_link_tags&interval=30d'
+);
+```
+
+## Sales Analytics
+
+Track revenue and sales performance:
+
+```typescript
+// Example: Get total sales and revenue
+const sales = await fetch(
+  '/api/analytics?event=sales&groupBy=count&interval=30d'
+);
+
+// Filter by sale type (new vs recurring)
+const newSales = await fetch(
+  '/api/analytics?event=sales&saleType=new&interval=30d'
+);
+
+const recurringSales = await fetch(
+  '/api/analytics?event=sales&saleType=recurring&interval=30d'
+);
+
+// Get sales by partner (for affiliate programs)
+const partnerSales = await fetch(
+  '/api/analytics?event=sales&groupBy=partners&interval=30d'
+);
+```
+
+<Note>
+Sales analytics require conversion tracking to be enabled on your links.
+</Note>
+
+## Customer Analytics
+
+Analyze customer-level data:
+
+```typescript
+// Example: Filter analytics by customer
+const customerAnalytics = await fetch(
+  '/api/analytics?event=sales&customerId=cus_123&interval=all'
+);
+
+// Get analytics for a specific customer across all links
+const customerActivity = await fetch(
+  '/api/analytics?event=clicks&customerId=cus_123'
+);
+```
+
+## Public Analytics
+
+Share analytics publicly for specific links:
+
+<Steps>
+  <Step title="Enable Public Stats">
+    Open the link editor and toggle "Public Stats" on.
+  </Step>
+  
+  <Step title="Share Analytics URL">
+    Share the public analytics URL: `https://dub.co/stats/{domain}/{key}`
+  </Step>
+  
+  <Step title="View Public Dashboard">
+    Anyone with the URL can view click analytics without authentication.
+  </Step>
+</Steps>
+
+```typescript
+// API Example: Enable public stats
+const link = await fetch('/api/links/link_123', {
+  method: 'PATCH',
+  body: JSON.stringify({ publicStats: true })
+});
+```
+
+<Warning>
+Public analytics only show click data. Revenue and conversion data remain private.
+</Warning>
+
+## Exporting Analytics
+
+Export your analytics data:
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Navigate to Analytics
+    2. Apply desired filters
+    3. Click "Export" in the top right
+    4. Choose CSV or JSON format
+    5. Download your data
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    // Export events as JSON
+    const events = await fetch(
+      '/api/events?event=clicks&interval=30d&limit=1000'
+    );
+    
+    // Paginate through all events
+    const page2 = await fetch(
+      '/api/events?event=clicks&interval=30d&page=2&limit=1000'
+    );
+    ```
+  </Tab>
+</Tabs>
+
+## Real-Time Analytics
+
+Analytics are updated in real-time:
+
+- Click events are processed within seconds
+- Dashboard auto-refreshes every 30 seconds
+- API responses reflect the latest data
+- No delays or batch processing
+
+## Analytics Retention
+
+Dub stores analytics data indefinitely:
+
+- All click events are retained forever
+- Historical data remains accessible
+- No data expiration based on plan
+- Query any time range from your founding date
+
+<Info>
+The minimum start date for analytics is {formatDate(DUB_FOUNDING_DATE)} (Dub's founding date).
+</Info>
+
+## API Reference
+
+For detailed API documentation:
+
+- [Get Analytics](/api-reference/analytics/retrieve)
+- [Get Events](/api-reference/events/list)
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Appropriate Granularity" icon="clock">
+    Choose time granularity based on your date range - use hours for short periods, days for weeks/months
+  </Card>
+  
+  <Card title="Filter Strategically" icon="filter">
+    Apply filters to focus on specific segments and avoid overwhelming data sets
+  </Card>
+  
+  <Card title="Track UTM Consistently" icon="tags">
+    Use consistent UTM naming conventions across campaigns for accurate tracking
+  </Card>
+  
+  <Card title="Monitor Real-Time" icon="chart-line">
+    Use real-time analytics to quickly identify and respond to traffic spikes or issues
+  </Card>
+</CardGroup>

@@ -1,0 +1,477 @@
+---
+title: QR Codes
+description: Generate customizable QR codes for your short links with branded logos, custom colors, and multiple export formats.
+---
+
+## Overview
+
+Dub automatically generates QR codes for every short link you create. Customize them with your brand colors, logos, and export in multiple formats. Track scans separately from regular link clicks with detailed analytics.
+
+## Accessing QR Codes
+
+### From the Dashboard
+
+<Steps>
+  <Step title="Open Link Editor">
+    Click on any link in your links list to open the editor.
+  </Step>
+  
+  <Step title="Click QR Code Icon">
+    Click the QR code icon in the link editor toolbar.
+  </Step>
+  
+  <Step title="Customize & Download">
+    Customize the design and download in your preferred format.
+  </Step>
+</Steps>
+
+<Info>
+Press **Q** to quickly open the QR code modal when viewing a link.
+</Info>
+
+### Via API
+
+Generate QR codes programmatically:
+
+```typescript
+// Get QR code for a link
+const qrCode = await fetch(
+  'https://api.dub.co/qr?url=https://dub.sh/github'
+);
+
+// With custom styling
+const customQR = await fetch(
+  'https://api.dub.co/qr?' +
+  'url=https://dub.sh/github&' +
+  'size=1000&' +
+  'fgColor=%23000000&' +
+  'logo=https://dub.co/logo.png'
+);
+```
+
+## Customization Options
+
+### QR Code Color
+
+Customize the foreground color of your QR code:
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the QR code modal
+    2. Click on the color picker or preset colors
+    3. Enter a custom hex color code
+    4. Preview updates in real-time
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    // Use hex color codes
+    const qr = await fetch(
+      'https://api.dub.co/qr?' +
+      'url=https://dub.sh/github&' +
+      'fgColor=%23FF0000' // Red
+    );
+    ```
+  </Tab>
+</Tabs>
+
+Default preset colors:
+- `#000000` - Black (default)
+- `#C73E33` - Red
+- `#DF6547` - Orange
+- `#F4B3D7` - Pink
+- `#F6CF54` - Yellow
+- `#49A065` - Green
+- `#2146B7` - Blue
+- `#AE49BF` - Purple
+
+### Background Color
+
+Set a custom background color:
+
+```typescript
+// API Example: Custom background
+const qr = await fetch(
+  'https://api.dub.co/qr?' +
+  'url=https://dub.sh/github&' +
+  'fgColor=%23000000&' +
+  'bgColor=%23FFFFFF' // White background (default)
+);
+```
+
+### Logo Customization
+
+Add your brand logo to the center of the QR code:
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the QR code modal
+    2. Toggle the "Logo" switch
+    3. The logo from your domain or workspace settings is used
+    4. On Free plans, the Dub logo is shown
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    // Use custom logo (Pro plan and above)
+    const qr = await fetch(
+      'https://api.dub.co/qr?' +
+      'url=https://dub.sh/github&' +
+      'logo=https://yourcompany.com/logo.png'
+    );
+    
+    // Hide logo completely
+    const noLogo = await fetch(
+      'https://api.dub.co/qr?' +
+      'url=https://dub.sh/github&' +
+      'hideLogo=true'
+    );
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+Custom logos and logo hiding are available on Pro plans and above. Free plans always show the Dub logo.
+</Note>
+
+### Size Configuration
+
+Generate QR codes in different sizes:
+
+```typescript
+// Small QR code (300px)
+const small = await fetch(
+  'https://api.dub.co/qr?url=https://dub.sh/github&size=300'
+);
+
+// Default size (600px)
+const standard = await fetch(
+  'https://api.dub.co/qr?url=https://dub.sh/github&size=600'
+);
+
+// Large QR code (2000px) - for print
+const large = await fetch(
+  'https://api.dub.co/qr?url=https://dub.sh/github&size=2000'
+);
+```
+
+<Info>
+For print materials, use sizes of 1000px or larger for optimal quality.
+</Info>
+
+### Error Correction Level
+
+Set the QR code error correction level:
+
+```typescript
+const qr = await fetch(
+  'https://api.dub.co/qr?' +
+  'url=https://dub.sh/github&' +
+  'level=H' // High error correction
+);
+```
+
+Available levels:
+- `L` - Low (~7% correction) - Default, best for clean environments
+- `M` - Medium (~15% correction)
+- `Q` - Quartile (~25% correction)
+- `H` - High (~30% correction) - Best when logo is displayed or printing quality varies
+
+### Margin Control
+
+Adjust the margin around the QR code:
+
+```typescript
+// No margin
+const noMargin = await fetch(
+  'https://api.dub.co/qr?url=https://dub.sh/github&margin=0'
+);
+
+// Default margin (4)
+const standard = await fetch(
+  'https://api.dub.co/qr?url=https://dub.sh/github&margin=4'
+);
+
+// Large margin
+const large = await fetch(
+  'https://api.dub.co/qr?url=https://dub.sh/github&margin=8'
+);
+```
+
+## Export Formats
+
+### SVG Export
+
+Export as scalable vector graphics:
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open QR code modal
+    2. Click the download icon
+    3. Select "Download SVG"
+    4. File downloads as `{key}-qrcode.svg`
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    // SVG format is returned by default
+    const svgQR = await fetch(
+      'https://api.dub.co/qr?url=https://dub.sh/github'
+    );
+    
+    const svgContent = await svgQR.text();
+    ```
+  </Tab>
+</Tabs>
+
+<Info>
+SVG is ideal for print materials as it scales infinitely without quality loss.
+</Info>
+
+### PNG Export
+
+Export as PNG for web and digital use:
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open QR code modal
+    2. Click download icon
+    3. Select "Download PNG"
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    // PNG format (requires rendering)
+    const canvas = await getQRAsCanvas(qrData, 'image/png');
+    ```
+  </Tab>
+</Tabs>
+
+### JPEG Export
+
+Export as JPEG:
+
+<Tabs>
+  <Tab title="Dashboard">
+    Click download icon → "Download JPEG"
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    const canvas = await getQRAsCanvas(qrData, 'image/jpeg');
+    ```
+  </Tab>
+</Tabs>
+
+## Copy to Clipboard
+
+Quickly copy QR codes:
+
+### Copy Image
+
+1. Open QR code modal
+2. Click the copy icon
+3. Select "Copy Image"
+4. Paste directly into documents, emails, or design tools
+
+### Copy URL
+
+Get a direct URL to the QR code:
+
+1. Open QR code modal
+2. Click copy icon
+3. Select "Copy URL"
+4. URL format: `https://api.dub.co/qr?url={shortLink}`
+
+```typescript
+// Example copied URL
+https://api.dub.co/qr?url=https://dub.sh/github&fgColor=%23000000
+```
+
+## QR Code Analytics
+
+### Tracking Scans
+
+QR code scans are automatically tracked separately:
+
+```typescript
+// Get analytics for QR scans only
+const qrScans = await fetch(
+  '/api/analytics?' +
+  'linkId=link_123&' +
+  'trigger=qr&' +
+  'interval=30d'
+);
+
+// Compare QR vs regular link clicks
+const allClicks = await fetch(
+  '/api/analytics?' +
+  'linkId=link_123&' +
+  'groupBy=triggers&' +
+  'interval=30d'
+);
+```
+
+<Info>
+The `trigger` field distinguishes QR code scans (`qr`) from regular link clicks (`link`).
+</Info>
+
+### Scan Locations
+
+Track where QR codes are being scanned:
+
+```typescript
+// QR scans by country
+const scansByCountry = await fetch(
+  '/api/analytics?' +
+  'linkId=link_123&' +
+  'trigger=qr&' +
+  'groupBy=countries'
+);
+
+// QR scans by city
+const scansByCity = await fetch(
+  '/api/analytics?' +
+  'linkId=link_123&' +
+  'trigger=qr&' +
+  'groupBy=cities'
+);
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Print Materials" icon="print">
+    Add QR codes to business cards, flyers, posters, and product packaging
+  </Card>
+  
+  <Card title="Event Check-ins" icon="calendar">
+    Use QR codes for event registration and attendee tracking
+  </Card>
+  
+  <Card title="Product Labels" icon="tag">
+    Link to product information, manuals, or support resources
+  </Card>
+  
+  <Card title="Restaurant Menus" icon="utensils">
+    Create contactless digital menus with trackable QR codes
+  </Card>
+  
+  <Card title="Retail Displays" icon="store">
+    Drive online traffic from in-store displays and signage
+  </Card>
+  
+  <Card title="Marketing Campaigns" icon="bullhorn">
+    Track offline marketing effectiveness with QR scan analytics
+  </Card>
+</CardGroup>
+
+## Advanced Features
+
+### Dynamic QR Codes
+
+All Dub QR codes are dynamic - update the destination URL without changing the QR code:
+
+<Steps>
+  <Step title="Print QR Code">
+    Generate and print your QR code.
+  </Step>
+  
+  <Step title="Update Link">
+    Later, update the short link's destination URL in Dub.
+  </Step>
+  
+  <Step title="QR Stays Same">
+    The printed QR code continues to work, now pointing to the new URL.
+  </Step>
+</Steps>
+
+<Info>
+This is a huge advantage over static QR codes - fix mistakes or update campaigns without reprinting.
+</Info>
+
+### Batch QR Code Generation
+
+Generate QR codes for multiple links:
+
+```typescript
+// Example: Generate QR codes for all links in a campaign
+const links = await fetch('/api/links?tagId=tag_campaign');
+const linkData = await links.json();
+
+for (const link of linkData) {
+  const qr = await fetch(
+    `https://api.dub.co/qr?url=${link.shortLink}&size=1000`
+  );
+  
+  // Save QR code
+  const buffer = await qr.arrayBuffer();
+  await saveQRCode(link.key, buffer);
+}
+```
+
+### Design Consistency
+
+QR codes automatically use:
+
+1. **Domain Logo**: If your domain has a logo configured
+2. **Workspace Logo**: Falls back to workspace logo
+3. **Dub Logo**: Default for free plans
+
+This ensures brand consistency across all your QR codes.
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use High Contrast" icon="adjust">
+    Dark QR codes on light backgrounds scan best - avoid light colors
+  </Card>
+  
+  <Card title="Test Before Printing" icon="mobile">
+    Always test QR codes with multiple devices before mass printing
+  </Card>
+  
+  <Card title="Size Appropriately" icon="expand">
+    Minimum 2cm × 2cm for printed codes, larger for distant scanning
+  </Card>
+  
+  <Card title="Include Instructions" icon="info-circle">
+    Add "Scan to visit" or similar text near QR codes for clarity
+  </Card>
+  
+  <Card title="Use Error Correction" icon="shield">
+    Use level H for printed materials with logos or potential damage
+  </Card>
+  
+  <Card title="Monitor Performance" icon="chart-line">
+    Track scan analytics to optimize placement and design
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### QR Code Won't Scan
+
+<Steps>
+  <Step title="Check Contrast">
+    Ensure sufficient contrast between foreground and background.
+  </Step>
+  
+  <Step title="Verify Size">
+    Make sure the QR code is large enough for the scanning distance.
+  </Step>
+  
+  <Step title="Test Error Correction">
+    If using a logo, increase error correction level to H.
+  </Step>
+  
+  <Step title="Check URL">
+    Verify the short link is active and not expired.
+  </Step>
+</Steps>
+
+## API Reference
+
+For detailed API documentation:
+
+- [QR Code API](/api-reference/qr-codes/generate)

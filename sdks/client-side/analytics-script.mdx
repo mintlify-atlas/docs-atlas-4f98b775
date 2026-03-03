@@ -1,0 +1,302 @@
+---
+title: Analytics Script
+description: Add Dub's analytics tracking to any website with a simple JavaScript snippet
+---
+
+The Dub analytics script is a lightweight JavaScript snippet that enables click tracking and conversion attribution on any website.
+
+## Installation
+
+Add the script to the `<head>` section of your HTML:
+
+```html
+<script 
+  defer
+  src="https://www.dubcdn.com/analytics/script.js" 
+></script>
+```
+
+<Note>
+  The `defer` attribute ensures the script loads asynchronously without blocking page rendering.
+</Note>
+
+## How It Works
+
+The analytics script automatically:
+
+1. Detects when a user arrives via a Dub short link
+2. Extracts the unique click ID from the URL (`dub_id` parameter)
+3. Stores it as a first-party cookie on your domain
+4. Makes it available for conversion tracking
+
+## Manual Installation
+
+For websites where you can edit the HTML:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My Website</title>
+    <script 
+      defer
+      src="https://www.dubcdn.com/analytics/script.js" 
+    ></script>
+  </head>
+  <body>
+    <!-- Your content -->
+  </body>
+</html>
+```
+
+## Google Tag Manager Installation
+
+For centralized tag management, use Google Tag Manager:
+
+<Steps>
+  <Step title="Create a New Tag">
+    - Navigate to your Google Tag Manager account
+    - Click **Tags** in the left sidebar
+    - Click the **New** button
+    - Select **Custom HTML** as the tag type
+  </Step>
+  
+  <Step title="Add the Dub Script">
+    Copy and paste this code into the HTML field:
+    
+    ```html
+    <script>
+      (function (c, n) {
+        c[n] =
+          c[n] ||
+          function () {
+            (c[n].q = c[n].q || []).push(arguments);
+          };
+        var methods = ["trackClick", "trackLead", "trackSale"];
+        for (var i = 0; i < methods.length; i++) {
+          (function (method) {
+            c[n][method] = function () {
+              var args = Array.prototype.slice.call(arguments);
+              args.unshift(method);
+              c[n].apply(null, args);
+            };
+          })(methods[i]);
+        }
+        var s = document.createElement("script");
+        s.defer = 1;
+        s.src = "https://www.dubcdn.com/analytics/script.js";
+        document.head.appendChild(s);
+      })(window, "dubAnalytics");
+    </script>
+    ```
+  </Step>
+  
+  <Step title="Configure the Trigger">
+    - Click on the **Triggering** section
+    - Select **All Pages** as the trigger type
+    - This will load the script on every page
+  </Step>
+  
+  <Step title="Save and Publish">
+    - Name your tag "Dub Analytics"
+    - Click **Save**
+    - Click **Submit** to create a new version
+    - Click **Publish** to activate the tag
+  </Step>
+</Steps>
+
+## Verification
+
+Verify the script is working correctly:
+
+### Check Cookie Storage
+
+1. Click on one of your Dub short links
+2. Open browser DevTools (F12)
+3. Go to Application → Cookies
+4. Look for the `dub_id` cookie
+
+### Check Console
+
+The script logs debug information to the console:
+
+```javascript
+// Open DevTools console and look for:
+[Dub] Initializing.
+[Dub] Click ID stored: clx1...
+```
+
+## Cookie Configuration
+
+The script stores click IDs with these defaults:
+
+- **Cookie Name**: `dub_id`
+- **Duration**: 30 days
+- **Domain**: Current domain
+- **Path**: `/`
+- **SameSite**: `Lax`
+- **Secure**: `true` (HTTPS only)
+
+## Advanced Configuration
+
+Customize the script behavior with configuration options:
+
+```html
+<script>
+  window.dubConfig = {
+    cookieOptions: {
+      domain: '.yourdomain.com', // Share across subdomains
+      maxAge: 60 * 60 * 24 * 90, // 90 days
+    },
+    domainsConfig: {
+      refer: 'refer.yourdomain.com', // Custom referral domain
+    },
+    apiHost: '/api/dub', // Custom API endpoint
+  };
+</script>
+<script 
+  defer
+  src="https://www.dubcdn.com/analytics/script.js" 
+></script>
+```
+
+## Tracking Conversions
+
+After the script is installed, retrieve the click ID server-side to track conversions:
+
+<CodeGroup>
+```typescript Next.js
+import { cookies } from "next/headers";
+import { Dub } from "dub";
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+export async function trackSignup(userId: string) {
+  const cookieStore = await cookies();
+  const dubId = cookieStore.get("dub_id")?.value;
+  
+  if (dubId) {
+    await dub.track.lead({
+      clickId: dubId,
+      eventName: "Sign Up",
+      customerExternalId: userId,
+    });
+    
+    // Delete the cookie after tracking
+    cookieStore.set("dub_id", "", { expires: new Date(0) });
+  }
+}
+```
+
+```javascript Express.js
+const { Dub } = require('dub');
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+app.post('/signup', async (req, res) => {
+  const dubId = req.cookies.dub_id;
+  
+  if (dubId) {
+    await dub.track.lead({
+      clickId: dubId,
+      eventName: 'Sign Up',
+      customerExternalId: req.user.id,
+    });
+    
+    // Clear the cookie
+    res.clearCookie('dub_id');
+  }
+  
+  res.json({ success: true });
+});
+```
+</CodeGroup>
+
+## WordPress Integration
+
+### Using a Plugin
+
+Install a "Header and Footer Scripts" plugin, then add the script to the header section.
+
+### Manual Installation
+
+Edit your theme's `header.php` file:
+
+```php
+<!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+  <?php wp_head(); ?>
+  <script 
+    defer
+    src="https://www.dubcdn.com/analytics/script.js" 
+  ></script>
+</head>
+```
+
+## Shopify Integration
+
+Add the script to your Shopify theme:
+
+1. Go to **Online Store** → **Themes**
+2. Click **Actions** → **Edit code**
+3. Open `theme.liquid`
+4. Add the script before `</head>`:
+
+```liquid
+<script 
+  defer
+  src="https://www.dubcdn.com/analytics/script.js" 
+></script>
+</head>
+```
+
+## Performance Impact
+
+- **Size**: ~2KB gzipped
+- **Load Time**: Asynchronous (non-blocking)
+- **Execution**: < 1ms
+- **Network**: Single HTTP request
+
+## Troubleshooting
+
+### Script Not Loading
+
+- Check for ad blockers or privacy extensions
+- Verify the script URL is correct
+- Check browser console for errors
+
+### Cookie Not Set
+
+- Ensure the URL has `dub_id` parameter
+- Check cookies are enabled in browser
+- Verify HTTPS is enabled (required for secure cookies)
+
+### Multiple Domains
+
+For cross-domain tracking, configure the cookie domain:
+
+```javascript
+window.dubConfig = {
+  cookieOptions: {
+    domain: '.yourdomain.com', // Works on all subdomains
+  },
+};
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="React Component" icon="react" href="/sdks/client-side/react">
+    Use React components instead
+  </Card>
+  <Card title="Track Conversions" icon="chart-line" href="/features/conversion-tracking">
+    Learn about conversion tracking
+  </Card>
+  <Card title="Next.js Integration" icon="N" href="/sdks/client-side/nextjs">
+    Integrate with Next.js
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the API
+  </Card>
+</CardGroup>

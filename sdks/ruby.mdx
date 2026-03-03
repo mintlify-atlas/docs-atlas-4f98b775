@@ -1,0 +1,228 @@
+---
+title: Ruby SDK
+description: Official Ruby SDK for Dub's link management platform
+---
+
+The Dub Ruby SDK provides a Ruby-friendly interface to interact with the Dub API from Ruby and Rails applications.
+
+## Installation
+
+Add the SDK to your Gemfile:
+
+```ruby
+gem 'dub'
+```
+
+Then run:
+
+```bash
+bundle install
+```
+
+## Authentication
+
+Initialize the SDK with your API key from the [Dub Dashboard](https://app.dub.co/settings/tokens):
+
+```ruby
+require 'dub'
+
+client = Dub::Client.new(
+  token: ENV['DUB_API_KEY']
+)
+```
+
+<Note>
+  Store your API key securely in environment variables. Never commit it to version control.
+</Note>
+
+## Quick Start
+
+### Create a Short Link
+
+```ruby
+require 'dub'
+
+client = Dub::Client.new(token: ENV['DUB_API_KEY'])
+
+link = client.links.create(
+  url: 'https://example.com/long-url',
+  domain: 'your-domain.com',
+  key: 'custom-key'
+)
+
+puts link.short_link  # https://your-domain.com/custom-key
+```
+
+### List Links
+
+Retrieve links from your workspace with optional filtering:
+
+```ruby
+links = client.links.list(
+  search: 'example',
+  page_size: 10
+)
+
+links.result.each do |link|
+  puts "#{link.short_link} -> #{link.url}"
+  puts "Clicks: #{link.clicks}"
+  puts "Created: #{link.created_at}"
+  puts
+end
+```
+
+### Update a Link
+
+```ruby
+updated_link = client.links.update(
+  link_id: 'clx1...',
+  url: 'https://example.com/new-destination'
+)
+```
+
+### Delete a Link
+
+```ruby
+client.links.delete(link_id: 'clx1...')
+```
+
+## Domain Management
+
+### List Domains
+
+```ruby
+domains = client.domains.list
+
+domains.result.each do |domain|
+  puts domain.slug
+end
+```
+
+### Get Domain Details
+
+```ruby
+domain = client.domains.get(slug: 'your-domain.com')
+puts "Domain: #{domain.slug}"
+puts "Verified: #{domain.verified}"
+```
+
+## Customer Tracking
+
+### List Customers
+
+Retrieve customers using their external ID:
+
+```ruby
+customers = client.customers.list(
+  external_id: 'user_123',
+  include_expanded_fields: true
+)
+
+customer = customers.first
+```
+
+## Conversion Tracking
+
+### Track Lead Conversions
+
+```ruby
+client.track.lead(
+  click_id: dub_id,
+  event_name: 'Sign Up',
+  customer_external_id: 'user_123',
+  customer_name: 'John Doe',
+  customer_email: 'john@example.com',
+  customer_avatar: 'https://example.com/avatar.jpg'
+)
+```
+
+### Track Sale Conversions
+
+```ruby
+client.track.sale(
+  click_id: dub_id,
+  event_name: 'Purchase',
+  customer_external_id: 'user_123',
+  amount: 99.99,
+  currency: 'USD',
+  metadata: {
+    order_id: 'order_456',
+    product_id: 'prod_789'
+  }
+)
+```
+
+## Rails Integration
+
+Create an initializer for your Rails application:
+
+```ruby
+# config/initializers/dub.rb
+
+DUB_CLIENT = Dub::Client.new(
+  token: ENV['DUB_API_KEY']
+)
+```
+
+Then use it in your controllers or models:
+
+```ruby
+class LinksController < ApplicationController
+  def create
+    link = DUB_CLIENT.links.create(
+      url: params[:url],
+      domain: 'your-domain.com'
+    )
+    
+    render json: { short_link: link.short_link }
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+end
+```
+
+## Error Handling
+
+Handle exceptions when making API calls:
+
+```ruby
+begin
+  link = client.links.create(
+    url: 'https://example.com',
+    domain: 'your-domain.com'
+  )
+rescue Dub::Error => e
+  puts "Failed to create link: #{e.message}"
+end
+```
+
+## Thread Safety
+
+The Dub client is thread-safe and can be shared across multiple threads:
+
+```ruby
+# Safe to use in multi-threaded environments
+DUB_CLIENT = Dub::Client.new(token: ENV['DUB_API_KEY'])
+
+threads = 10.times.map do |i|
+  Thread.new do
+    link = DUB_CLIENT.links.create(
+      url: "https://example.com/page-#{i}"
+    )
+    puts link.short_link
+  end
+end
+
+threads.each(&:join)
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the complete API documentation
+  </Card>
+  <Card title="Client-Side Tracking" icon="chart-line" href="/sdks/client-side/overview">
+    Add analytics tracking to your website
+  </Card>
+</CardGroup>

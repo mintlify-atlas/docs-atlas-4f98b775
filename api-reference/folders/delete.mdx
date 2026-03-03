@@ -1,0 +1,52 @@
+---
+title: "Delete a folder"
+description: "Delete a folder from the workspace. All existing links will still work, but they will no longer be associated with this folder."
+---
+
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.dub.co/folders/fold_abc123 \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+import { Dub } from 'dub';
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+const result = await dub.folders.delete('fold_abc123');
+```
+
+```python Python
+from dub import Dub
+
+dub = Dub(token=os.environ['DUB_API_KEY'])
+
+result = dub.folders.delete('fold_abc123')
+```
+</CodeGroup>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the folder to delete.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  The ID of the deleted folder.
+</ResponseField>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "fold_abc123"
+}
+```
+</ResponseExample>

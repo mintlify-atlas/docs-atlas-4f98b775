@@ -1,0 +1,97 @@
+---
+title: Delete a Customer
+description: Delete a customer from a workspace
+---
+
+## Endpoint
+
+<ParamField path="method" type="string">
+  DELETE
+</ParamField>
+
+<ParamField path="url" type="string">
+  https://api.dub.co/customers/:id
+</ParamField>
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+```bash
+Authorization: Bearer DUB_API_KEY
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique ID of the customer. You may use either:
+  - The customer's `id` on Dub (obtained via `/customers` endpoint)
+  - Their `externalId` (unique ID within your system, prefixed with `ext_`, e.g. `ext_user_123456`)
+</ParamField>
+
+## Response
+
+Returns the ID of the deleted customer.
+
+<ResponseField name="id" type="string">
+  The unique ID of the deleted customer
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X DELETE https://api.dub.co/customers/cus_xyz123 \
+  -H "Authorization: Bearer DUB_API_KEY"
+```
+
+```bash cURL (with external ID)
+curl -X DELETE https://api.dub.co/customers/ext_user_123456 \
+  -H "Authorization: Bearer DUB_API_KEY"
+```
+
+```typescript TypeScript SDK
+import { Dub } from 'dub';
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const result = await dub.customers.delete('cus_xyz123');
+```
+
+```python Python SDK
+from dub import Dub
+
+dub = Dub(token=os.environ["DUB_API_KEY"])
+
+result = dub.customers.delete("cus_xyz123")
+```
+
+```go Go SDK
+import (
+    "context"
+    "github.com/dubinc/dub-go"
+)
+
+client := dub.New(
+    dub.WithSecurity(os.Getenv("DUB_API_KEY")),
+)
+
+result, err := client.Customers.Delete(context.Background(), "cus_xyz123")
+```
+
+</CodeGroup>
+
+## Response Example
+
+```json
+{
+  "id": "cus_xyz123"
+}
+```
+
+<Warning>
+  Deleting a customer will permanently remove all associated data. This action cannot be undone.
+</Warning>

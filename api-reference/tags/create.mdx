@@ -1,0 +1,81 @@
+---
+title: "Create a tag"
+description: "Create a tag for the authenticated workspace"
+---
+
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.dub.co/tags \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Marketing",
+    "color": "blue"
+  }'
+```
+
+```typescript TypeScript
+import { Dub } from 'dub';
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+const tag = await dub.tags.create({
+  name: 'Marketing',
+  color: 'blue',
+});
+```
+
+```python Python
+from dub import Dub
+
+dub = Dub(token=os.environ['DUB_API_KEY'])
+
+tag = dub.tags.create(
+  name='Marketing',
+  color='blue',
+)
+```
+</CodeGroup>
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  The name of the tag to create.
+  
+  Minimum length: 1, Maximum length: 50
+</ParamField>
+
+<ParamField body="color" type="string">
+  The color of the tag. If not provided, a random color will be used.
+  
+  Available colors: `red`, `yellow`, `green`, `blue`, `purple`, `pink`, `brown`
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  The unique ID of the tag.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The name of the tag.
+</ResponseField>
+
+<ResponseField name="color" type="string">
+  The color of the tag.
+</ResponseField>
+
+<ResponseExample>
+```json 201 Created
+{
+  "id": "tag_abc123",
+  "name": "Marketing",
+  "color": "blue"
+}
+```
+</ResponseExample>

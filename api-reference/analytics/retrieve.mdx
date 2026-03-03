@@ -1,0 +1,841 @@
+---
+title: "Retrieve Analytics"
+description: "Retrieve analytics for a link, a domain, or the authenticated workspace. The response type depends on the event and groupBy query parameters."
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash GET
+https://api.dub.co/analytics
+```
+</CodeGroup>
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+</ParamField>
+
+## Query Parameters
+
+### Event Configuration
+
+<ParamField query="event" type="enum" default="clicks">
+  The type of event to retrieve analytics for. Defaults to `clicks`.
+  
+  Options: `clicks`, `leads`, `sales`, `composite`
+  
+  <Expandable title="Example">
+    ```
+    event=leads
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="groupBy" type="enum" default="count">
+  The parameter to group the analytics data points by. Defaults to `count` if undefined.
+  
+  Options: `count`, `timeseries`, `continents`, `countries`, `regions`, `cities`, `devices`, `browsers`, `os`, `triggers`, `referers`, `referer_urls`, `top_links`, `top_urls`
+  
+  <Expandable title="Example">
+    ```
+    groupBy=countries
+    ```
+  </Expandable>
+</ParamField>
+
+### Link Identification
+
+<ParamField query="domain" type="string">
+  The domain to filter analytics for. Supports advanced filtering: single value, multiple values (comma-separated), or exclusion (prefix with `-`).
+  
+  <Expandable title="Examples">
+    ```
+    domain=dub.co
+    domain=dub.co,google.com
+    domain=-spam.com
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="key" type="string">
+  The slug of the short link to retrieve analytics for. Must be used along with the corresponding `domain` of the short link to fetch analytics for a specific short link.
+  
+  <Expandable title="Example">
+    ```
+    domain=dub.co&key=github
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="linkId" type="string">
+  The unique ID of the link to retrieve analytics for. Supports advanced filtering: single value, multiple values (comma-separated), or exclusion (prefix with `-`).
+  
+  <Expandable title="Examples">
+    ```
+    linkId=link_123
+    linkId=link_123,link_456
+    linkId=-link_789
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="externalId" type="string">
+  The ID of the link in your database. Must be prefixed with 'ext_' when passed as a query parameter.
+  
+  <Expandable title="Example">
+    ```
+    externalId=ext_123456
+    ```
+  </Expandable>
+</ParamField>
+
+### Time Range
+
+<ParamField query="interval" type="enum">
+  The interval to retrieve analytics for. If undefined, defaults to 24h.
+  
+  Options: `1h`, `24h`, `7d`, `30d`, `90d`, `ytd`, `1y`, `all`, `all_unfiltered`
+  
+  <Expandable title="Example">
+    ```
+    interval=7d
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="start" type="string">
+  The start date and time when to retrieve analytics from. If set, takes precedence over `interval`. Format: ISO 8601 date string.
+  
+  <Expandable title="Example">
+    ```
+    start=2024-01-01T00:00:00Z
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="end" type="string">
+  The end date and time when to retrieve analytics from. If not provided, defaults to the current date. If set along with `start`, takes precedence over `interval`.
+  
+  <Expandable title="Example">
+    ```
+    end=2024-12-31T23:59:59Z
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="timezone" type="string" default="UTC">
+  The IANA time zone code for aligning timeseries granularity (e.g. America/New_York). Defaults to UTC.
+  
+  <Expandable title="Example">
+    ```
+    timezone=America/New_York
+    ```
+  </Expandable>
+</ParamField>
+
+### Filtering
+
+<ParamField query="tenantId" type="string">
+  The ID of the tenant that created the link inside your system. Supports advanced filtering: single value, multiple values (comma-separated), or exclusion (prefix with `-`).
+  
+  <Expandable title="Examples">
+    ```
+    tenantId=tenant_123
+    tenantId=tenant_123,tenant_456
+    tenantId=-tenant_789
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="tagId" type="string">
+  The tag ID to retrieve analytics for. Supports advanced filtering: single value, multiple values (comma-separated), or exclusion (prefix with `-`).
+  
+  <Expandable title="Examples">
+    ```
+    tagId=tag_123
+    tagId=tag_123,tag_456
+    tagId=-tag_789
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="folderId" type="string">
+  The folder ID to retrieve analytics for. Supports advanced filtering: single value, multiple values (comma-separated), or exclusion (prefix with `-`). If not provided, return analytics for all links.
+  
+  <Expandable title="Examples">
+    ```
+    folderId=folder_123
+    folderId=folder_123,folder_456
+    folderId=-folder_789
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="groupId" type="string">
+  The group ID to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    groupId=grp_123
+    groupId=grp_123,grp_456
+    groupId=-grp_789
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="partnerId" type="string">
+  The ID of the partner to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    partnerId=pn_123
+    partnerId=pn_123,pn_456
+    partnerId=-pn_789
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="customerId" type="string">
+  The ID of the customer to retrieve analytics for.
+  
+  <Expandable title="Example">
+    ```
+    customerId=cus_123
+    ```
+  </Expandable>
+</ParamField>
+
+### Geographic Filters
+
+<ParamField query="country" type="string">
+  The country to retrieve analytics for. Must be passed as a 2-letter ISO 3166-1 country code. Supports advanced filtering: single value, multiple values (comma-separated), or exclusion (prefix with `-`).
+  
+  <Expandable title="Examples">
+    ```
+    country=US
+    country=US,BR,FR
+    country=-US
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="city" type="string">
+  The city to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    city=New York
+    city=New York,London
+    city=-New York
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="region" type="string">
+  The ISO 3166-2 region code to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    region=NY
+    region=NY,CA
+    region=-NY
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="continent" type="string">
+  The continent to retrieve analytics for. Valid values: AF, AN, AS, EU, NA, OC, SA. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    continent=NA
+    continent=NA,EU
+    continent=-AS
+    ```
+  </Expandable>
+</ParamField>
+
+### Device & Browser Filters
+
+<ParamField query="device" type="string">
+  The device to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    device=Desktop
+    device=Mobile,Tablet
+    device=-Mobile
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="browser" type="string">
+  The browser to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    browser=Chrome
+    browser=Chrome,Firefox,Safari
+    browser=-IE
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="os" type="string">
+  The OS to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    os=Windows
+    os=Mac,Windows,Linux
+    os=-Windows
+    ```
+  </Expandable>
+</ParamField>
+
+### Traffic Source Filters
+
+<ParamField query="trigger" type="string">
+  The trigger to retrieve analytics for. Valid values: qr, link, pageview. Supports advanced filtering. If undefined, returns all trigger types.
+  
+  <Expandable title="Examples">
+    ```
+    trigger=qr
+    trigger=qr,link
+    trigger=-qr
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="referer" type="string">
+  The referer hostname to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    referer=google.com
+    referer=google.com,twitter.com
+    referer=-facebook.com
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="refererUrl" type="string">
+  The full referer URL to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    refererUrl=https://google.com
+    refererUrl=https://google.com,https://twitter.com
+    refererUrl=-https://spam.com
+    ```
+  </Expandable>
+</ParamField>
+
+### UTM Parameters
+
+<ParamField query="utm_source" type="string">
+  The UTM source to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    utm_source=google
+    utm_source=google,twitter
+    utm_source=-spam
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="utm_medium" type="string">
+  The UTM medium to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    utm_medium=cpc
+    utm_medium=cpc,social
+    utm_medium=-email
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="utm_campaign" type="string">
+  The UTM campaign to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    utm_campaign=summer_sale
+    utm_campaign=summer_sale,winter_sale
+    utm_campaign=-old_campaign
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="utm_term" type="string">
+  The UTM term to retrieve analytics for. Supports advanced filtering.
+</ParamField>
+
+<ParamField query="utm_content" type="string">
+  The UTM content to retrieve analytics for. Supports advanced filtering.
+</ParamField>
+
+### Other Filters
+
+<ParamField query="url" type="string">
+  The destination URL to retrieve analytics for. Supports advanced filtering.
+  
+  <Expandable title="Examples">
+    ```
+    url=https://example.com
+    url=https://example.com,https://other.com
+    url=-https://spam.com
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="root" type="boolean">
+  Filter for root domains. If true, filter for domains only. If false, filter for links only. If undefined, return both.
+</ParamField>
+
+<ParamField query="saleType" type="enum">
+  Filter sales by type: 'new' for first-time purchases, 'recurring' for repeat purchases. If undefined, returns both.
+  
+  Options: `new`, `recurring`
+</ParamField>
+
+<ParamField query="query" type="string">
+  Search the events by a custom metadata value. Only available for lead and sale events. Max 10,000 characters.
+  
+  <Expandable title="Example">
+    ```
+    query=metadata['key']:'value'
+    ```
+  </Expandable>
+</ParamField>
+
+## Response
+
+The response varies based on the `groupBy` parameter:
+
+### Count Analytics
+
+<ResponseField name="clicks" type="number" default={0}>
+  The total number of clicks
+</ResponseField>
+
+<ResponseField name="leads" type="number" default={0}>
+  The total number of leads
+</ResponseField>
+
+<ResponseField name="sales" type="number" default={0}>
+  The total number of sales
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number" default={0}>
+  The total amount of sales, in cents
+</ResponseField>
+
+### Timeseries Analytics
+
+Returns an array of time-series data points:
+
+<ResponseField name="start" type="string">
+  The starting timestamp of the interval
+</ResponseField>
+
+<ResponseField name="clicks" type="number" default={0}>
+  The number of clicks in the interval
+</ResponseField>
+
+<ResponseField name="leads" type="number" default={0}>
+  The number of leads in the interval
+</ResponseField>
+
+<ResponseField name="sales" type="number" default={0}>
+  The number of sales in the interval
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number" default={0}>
+  The total amount of sales in the interval, in cents
+</ResponseField>
+
+### Geographic Analytics
+
+Returns an array of geographic data points (countries, regions, cities, or continents):
+
+<ResponseField name="country" type="string">
+  The 2-letter ISO 3166-1 country code (for countries, regions, cities)
+</ResponseField>
+
+<ResponseField name="continent" type="string">
+  The 2-letter ISO 3166-1 continent code (for continents)
+</ResponseField>
+
+<ResponseField name="region" type="string">
+  The 2-letter ISO 3166-2 region code (for regions, cities)
+</ResponseField>
+
+<ResponseField name="city" type="string">
+  The name of the city (for cities)
+</ResponseField>
+
+<ResponseField name="clicks" type="number" default={0}>
+  The number of clicks from this location
+</ResponseField>
+
+<ResponseField name="leads" type="number" default={0}>
+  The number of leads from this location
+</ResponseField>
+
+<ResponseField name="sales" type="number" default={0}>
+  The number of sales from this location
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number" default={0}>
+  The total amount of sales from this location, in cents
+</ResponseField>
+
+### Device Analytics
+
+Returns an array of device, browser, or OS data:
+
+<ResponseField name="device" type="string">
+  The name of the device (for devices groupBy)
+</ResponseField>
+
+<ResponseField name="browser" type="string">
+  The name of the browser (for browsers groupBy)
+</ResponseField>
+
+<ResponseField name="os" type="string">
+  The name of the OS (for os groupBy)
+</ResponseField>
+
+<ResponseField name="clicks" type="number" default={0}>
+  The number of clicks
+</ResponseField>
+
+<ResponseField name="leads" type="number" default={0}>
+  The number of leads
+</ResponseField>
+
+<ResponseField name="sales" type="number" default={0}>
+  The number of sales
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number" default={0}>
+  The total amount of sales, in cents
+</ResponseField>
+
+### Trigger Analytics
+
+Returns an array of trigger methods:
+
+<ResponseField name="trigger" type="enum">
+  The type of trigger method: link click or QR scan
+</ResponseField>
+
+<ResponseField name="clicks" type="number" default={0}>
+  The number of clicks from this trigger method
+</ResponseField>
+
+<ResponseField name="leads" type="number" default={0}>
+  The number of leads from this trigger method
+</ResponseField>
+
+<ResponseField name="sales" type="number" default={0}>
+  The number of sales from this trigger method
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number" default={0}>
+  The total amount of sales from this trigger method, in cents
+</ResponseField>
+
+### Referer Analytics
+
+Returns an array of referer data:
+
+<ResponseField name="referer" type="string">
+  The name of the referer. If unknown, this will be `(direct)` (for referers groupBy)
+</ResponseField>
+
+<ResponseField name="refererUrl" type="string">
+  The full URL of the referer. If unknown, this will be `(direct)` (for referer_urls groupBy)
+</ResponseField>
+
+<ResponseField name="clicks" type="number" default={0}>
+  The number of clicks from this referer
+</ResponseField>
+
+<ResponseField name="leads" type="number" default={0}>
+  The number of leads from this referer
+</ResponseField>
+
+<ResponseField name="sales" type="number" default={0}>
+  The number of sales from this referer
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number" default={0}>
+  The total amount of sales from this referer, in cents
+</ResponseField>
+
+### Top Links Analytics
+
+Returns an array of top-performing links:
+
+<ResponseField name="id" type="string">
+  The unique ID of the short link
+</ResponseField>
+
+<ResponseField name="domain" type="string">
+  The domain of the short link
+</ResponseField>
+
+<ResponseField name="key" type="string">
+  The key of the short link
+</ResponseField>
+
+<ResponseField name="shortLink" type="string">
+  The short link URL
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  The destination URL of the short link
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The custom link preview title (og:title)
+</ResponseField>
+
+<ResponseField name="comments" type="string">
+  The comments of the short link
+</ResponseField>
+
+<ResponseField name="folderId" type="string">
+  The ID of the folder that the link belongs to (if applicable)
+</ResponseField>
+
+<ResponseField name="partnerId" type="string">
+  The ID of the partner that the link belongs to (if applicable)
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  The creation timestamp of the short link
+</ResponseField>
+
+<ResponseField name="clicks" type="number" default={0}>
+  The number of clicks from this link
+</ResponseField>
+
+<ResponseField name="leads" type="number" default={0}>
+  The number of leads from this link
+</ResponseField>
+
+<ResponseField name="sales" type="number" default={0}>
+  The number of sales from this link
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number" default={0}>
+  The total amount of sales from this link, in cents
+</ResponseField>
+
+### Top URLs Analytics
+
+Returns an array of top destination URLs:
+
+<ResponseField name="url" type="string">
+  The full destination URL (including query parameters)
+</ResponseField>
+
+<ResponseField name="clicks" type="number" default={0}>
+  The number of clicks from this URL
+</ResponseField>
+
+<ResponseField name="leads" type="number" default={0}>
+  The number of leads from this URL
+</ResponseField>
+
+<ResponseField name="sales" type="number" default={0}>
+  The number of sales from this URL
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number" default={0}>
+  The total amount of sales from this URL, in cents
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+```bash cURL - Count Analytics
+curl -X GET "https://api.dub.co/analytics?event=clicks&groupBy=count&interval=7d" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```bash cURL - Timeseries
+curl -X GET "https://api.dub.co/analytics?event=leads&groupBy=timeseries&start=2024-01-01T00:00:00Z&end=2024-01-31T23:59:59Z" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```bash cURL - Country Analytics
+curl -X GET "https://api.dub.co/analytics?event=sales&groupBy=countries&interval=30d" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```bash cURL - Link Analytics
+curl -X GET "https://api.dub.co/analytics?domain=dub.co&key=github&groupBy=count&interval=24h" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```typescript TypeScript SDK - Count
+import { Dub } from "dub";
+
+const dub = new Dub({
+  token: "YOUR_API_KEY",
+});
+
+const analytics = await dub.analytics.retrieve({
+  event: "clicks",
+  groupBy: "count",
+  interval: "7d",
+});
+
+console.log(analytics);
+```
+
+```typescript TypeScript SDK - Timeseries
+import { Dub } from "dub";
+
+const dub = new Dub({
+  token: "YOUR_API_KEY",
+});
+
+const analytics = await dub.analytics.retrieve({
+  event: "leads",
+  groupBy: "timeseries",
+  start: new Date("2024-01-01"),
+  end: new Date("2024-01-31"),
+});
+
+console.log(analytics);
+```
+
+```python Python SDK
+from dub import Dub
+
+dub = Dub(token="YOUR_API_KEY")
+
+analytics = dub.analytics.retrieve(
+    event="sales",
+    group_by="countries",
+    interval="30d"
+)
+
+print(analytics)
+```
+
+```go Go SDK
+package main
+
+import (
+    "context"
+    "fmt"
+    "github.com/dubinc/dub-go"
+)
+
+func main() {
+    client := dub.New(
+        dub.WithSecurity("YOUR_API_KEY"),
+    )
+
+    analytics, err := client.Analytics.Retrieve(context.Background(), &dub.AnalyticsRetrieveRequest{
+        Event:   dub.String("clicks"),
+        GroupBy: dub.String("count"),
+        Interval: dub.String("7d"),
+    })
+    
+    if err != nil {
+        panic(err)
+    }
+    
+    fmt.Println(analytics)
+}
+```
+</CodeGroup>
+
+## Response Examples
+
+<CodeGroup>
+```json Count Response
+{
+  "clicks": 1234,
+  "leads": 45,
+  "sales": 12,
+  "saleAmount": 567800
+}
+```
+
+```json Timeseries Response
+[
+  {
+    "start": "2024-01-01T00:00:00.000Z",
+    "clicks": 123,
+    "leads": 5,
+    "sales": 2,
+    "saleAmount": 45600
+  },
+  {
+    "start": "2024-01-02T00:00:00.000Z",
+    "clicks": 156,
+    "leads": 7,
+    "sales": 3,
+    "saleAmount": 78900
+  }
+]
+```
+
+```json Countries Response
+[
+  {
+    "country": "US",
+    "region": "*",
+    "city": "*",
+    "clicks": 567,
+    "leads": 23,
+    "sales": 8,
+    "saleAmount": 234500
+  },
+  {
+    "country": "GB",
+    "region": "*",
+    "city": "*",
+    "clicks": 234,
+    "leads": 12,
+    "sales": 3,
+    "saleAmount": 98700
+  }
+]
+```
+
+```json Top Links Response
+[
+  {
+    "id": "clux0rgak00011...",
+    "domain": "dub.co",
+    "key": "github",
+    "shortLink": "https://dub.co/github",
+    "url": "https://github.com/dubinc/dub",
+    "title": "Dub - Open-source link management",
+    "comments": null,
+    "folderId": null,
+    "partnerId": null,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "clicks": 1234,
+    "leads": 45,
+    "sales": 12,
+    "saleAmount": 567800
+  }
+]
+```
+</CodeGroup>

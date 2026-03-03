@@ -1,0 +1,258 @@
+---
+title: Rate Limits
+description: Understand rate limiting in the Dub API and how limits vary by plan.
+---
+
+The Dub API implements rate limiting to ensure fair usage and maintain service quality. Rate limits vary based on your workspace plan and the type of API endpoint.
+
+## Rate Limit Tiers
+
+Rate limits are enforced per API token and depend on your workspace plan:
+
+<Note>
+Rate limits are measured in requests per time period and reset at the end of each interval.
+</Note>
+
+### Free Plan
+
+- **Standard API**: 60 requests per minute
+- **Analytics API**: Not available on Free plan
+
+<Warning>
+The Analytics API is only available on paid plans. Attempts to access analytics endpoints on the Free plan will return a `403 Forbidden` error.
+</Warning>
+
+### Pro Plan
+
+- **Standard API**: 600 requests per minute
+- **Analytics API**: 2 requests per second
+
+### Business Plan
+
+- **Standard API**: 1,200 requests per minute
+- **Analytics API**: 4 requests per second
+
+### Advanced Plan
+
+- **Standard API**: 3,000 requests per minute
+- **Analytics API**: 8 requests per second
+
+### Enterprise Plan
+
+Enterprise plans can have custom rate limits tailored to your needs. Contact sales for more information.
+
+## Endpoint Categories
+
+Rate limits are applied differently based on the endpoint category:
+
+### Standard API Endpoints
+
+All non-analytics endpoints use the standard API rate limit:
+
+- `/links`
+- `/domains`
+- `/tags`
+- `/folders`
+- `/customers`
+- `/partners`
+- `/track/*`
+- And others
+
+**Rate limit interval**: Per minute
+
+### Analytics API Endpoints
+
+Analytics endpoints have separate, more restrictive rate limits:
+
+- `/analytics`
+- `/events`
+
+**Rate limit interval**: Per second
+
+<Note>
+Analytics endpoints are rate limited per second due to their data-intensive nature, while standard endpoints are limited per minute.
+</Note>
+
+## Rate Limit Headers
+
+Every API response includes rate limit information in the headers:
+
+```http
+X-RateLimit-Limit: 600
+X-RateLimit-Remaining: 599
+X-RateLimit-Reset: 1699564800
+```
+
+### Header Descriptions
+
+<ResponseField name="X-RateLimit-Limit" type="string">
+  The maximum number of requests allowed in the current time window.
+</ResponseField>
+
+<ResponseField name="X-RateLimit-Remaining" type="string">
+  The number of requests remaining in the current time window.
+</ResponseField>
+
+<ResponseField name="X-RateLimit-Reset" type="string">
+  Unix timestamp (in seconds) when the rate limit window resets.
+</ResponseField>
+
+<ResponseField name="Retry-After" type="string">
+  Number of seconds until you can retry the request (only included when rate limited).
+</ResponseField>
+
+## Rate Limit Exceeded
+
+When you exceed the rate limit, the API returns a `429 Too Many Requests` response:
+
+**Status Code**: `429 Rate Limit Exceeded`
+
+**Response Body**:
+```json
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "Too many requests.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#rate-limit-exceeded"
+  }
+}
+```
+
+**Response Headers**:
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 600
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1699564860
+Retry-After: 60
+```
+
+## Handling Rate Limits
+
+### 1. Respect Rate Limit Headers
+
+Monitor the `X-RateLimit-Remaining` header to track your usage:
+
+<CodeGroup>
+
+```javascript JavaScript
+const response = await fetch('https://api.dub.co/links?workspaceId=ws_abc123', {
+  headers: {
+    'Authorization': 'Bearer dub_xxxxxxxxxxxxx',
+  },
+});
+
+const remaining = response.headers.get('X-RateLimit-Remaining');
+const reset = response.headers.get('X-RateLimit-Reset');
+
+console.log(`Requests remaining: ${remaining}`);
+console.log(`Resets at: ${new Date(reset * 1000)}`);
+```
+
+```python Python
+import requests
+from datetime import datetime
+
+response = requests.get(
+    'https://api.dub.co/links',
+    params={'workspaceId': 'ws_abc123'},
+    headers={'Authorization': 'Bearer dub_xxxxxxxxxxxxx'},
+)
+
+remaining = response.headers.get('X-RateLimit-Remaining')
+reset = response.headers.get('X-RateLimit-Reset')
+
+print(f'Requests remaining: {remaining}')
+print(f'Resets at: {datetime.fromtimestamp(int(reset))}')
+```
+
+</CodeGroup>
+
+### 2. Implement Exponential Backoff
+
+When you receive a `429` response, implement exponential backoff:
+
+```javascript
+async function makeRequestWithRetry(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    const response = await fetch(url, options);
+    
+    if (response.status !== 429) {
+      return response;
+    }
+    
+    const retryAfter = response.headers.get('Retry-After');
+    const delay = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, i) * 1000;
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+  
+  throw new Error('Max retries exceeded');
+}
+```
+
+### 3. Use the Retry-After Header
+
+When rate limited, use the `Retry-After` header to determine when to retry:
+
+```python
+import time
+import requests
+
+def make_request_with_retry(url, headers):
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 429:
+        retry_after = int(response.headers.get('Retry-After', 60))
+        print(f'Rate limited. Retrying after {retry_after} seconds...')
+        time.sleep(retry_after)
+        return make_request_with_retry(url, headers)
+    
+    return response
+```
+
+### 4. Batch Operations
+
+Use bulk endpoints when available to reduce the number of API calls:
+
+```bash
+# Instead of creating links one by one
+curl -X POST https://api.dub.co/links/bulk?workspaceId=ws_abc123 \\
+  -H "Authorization: Bearer dub_xxxxxxxxxxxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '[{
+    "url": "https://example.com/page1"
+  }, {
+    "url": "https://example.com/page2"
+  }]'
+```
+
+## Rate Limiting for Sessions
+
+When using session-based authentication (non-API requests from the Dub dashboard), different rate limits apply:
+
+- **Standard API**: 600 requests per minute
+- **Analytics API**: 12 requests per second
+
+These limits are applied per user session rather than per API token.
+
+## Best Practices
+
+1. **Cache responses**: Cache API responses when possible to reduce requests
+2. **Monitor headers**: Always check rate limit headers to track usage
+3. **Use webhooks**: Instead of polling for updates, use webhooks for real-time events
+4. **Batch requests**: Use bulk endpoints to create, update, or delete multiple resources
+5. **Upgrade plan**: If you consistently hit rate limits, consider upgrading your plan
+6. **Implement backoff**: Always implement retry logic with exponential backoff
+
+## Exceeding Limits
+
+If you need higher rate limits than your current plan provides:
+
+1. **Upgrade your plan**: Higher plans include increased rate limits
+2. **Contact sales**: Enterprise customers can request custom rate limits
+3. **Optimize usage**: Review your API usage patterns and optimize where possible
+
+<Note>
+Rate limits are enforced to ensure fair usage and system stability. Repeatedly exceeding rate limits may result in temporary API access restrictions.
+</Note>

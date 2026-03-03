@@ -1,0 +1,71 @@
+---
+title: Create a Customer
+description: Customers are automatically created when tracking lead events
+---
+
+<Note>
+  Customers in Dub are automatically created when you track lead conversion events using the `/track/lead` endpoint. There is no separate create customer endpoint.
+</Note>
+
+## How Customers are Created
+
+When you call the `/track/lead` endpoint with customer information, Dub will:
+
+1. Check if a customer with the provided `customerExternalId` already exists
+2. If the customer exists, it will be updated with any new information provided
+3. If the customer doesn't exist, a new customer will be created
+
+## Customer Fields
+
+When tracking a lead, you can provide the following customer information:
+
+- `customerExternalId` (required) - Your unique ID for the customer
+- `customerName` - The customer's name
+- `customerEmail` - The customer's email address  
+- `customerAvatar` - URL to the customer's avatar image
+
+## Example
+
+To create a customer, track a lead event:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.dub.co/track/lead \
+  -H "Authorization: Bearer DUB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clickId": "cm2xyz123abc",
+    "eventName": "Sign up",
+    "customerExternalId": "user_123456",
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com"
+  }'
+```
+
+```typescript TypeScript SDK
+import { Dub } from 'dub';
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const response = await dub.track.lead({
+  clickId: 'cm2xyz123abc',
+  eventName: 'Sign up',
+  customerExternalId: 'user_123456',
+  customerName: 'John Doe',
+  customerEmail: 'john@example.com',
+});
+```
+
+</CodeGroup>
+
+## Next Steps
+
+After creating a customer through lead tracking:
+
+- [Track sale events](/api-reference/track/sale) for the customer
+- [Retrieve customer information](/api-reference/customers/retrieve)
+- [Update customer details](/api-reference/customers/update)
+- [List all customers](/api-reference/customers/list)

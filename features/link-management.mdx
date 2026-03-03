@@ -1,0 +1,398 @@
+---
+title: Link Management
+description: Create, organize, and manage your short links with advanced features like folders, tags, and bulk operations.
+---
+
+## Overview
+
+Dub provides powerful link management capabilities to help you create, organize, and track your short links. From simple URL shortening to advanced features like custom domains, UTM parameters, and device targeting, Dub gives you complete control over your links.
+
+## Creating Links
+
+### Basic Link Creation
+
+Create a short link through the Dub dashboard or API:
+
+<Steps>
+  <Step title="Navigate to Links">
+    Click on "Links" in the sidebar to access your links dashboard.
+  </Step>
+  
+  <Step title="Click Create Link">
+    Click the "Create Link" button in the top right corner.
+  </Step>
+  
+  <Step title="Enter Destination URL">
+    Paste the long URL you want to shorten in the "Destination URL" field.
+  </Step>
+  
+  <Step title="Customize Short Link">
+    Optionally customize the short link slug or let Dub generate a random one.
+  </Step>
+  
+  <Step title="Save">
+    Click "Create" to save your short link.
+  </Step>
+</Steps>
+
+### Link Properties
+
+Every link in Dub has the following core properties:
+
+<CardGroup cols={2}>
+  <Card title="Domain" icon="globe">
+    The short domain for your link (e.g., `dub.sh`, `dub.co`, or your custom domain)
+  </Card>
+  
+  <Card title="Key" icon="key">
+    The unique slug that identifies your link (e.g., `/github`)
+  </Card>
+  
+  <Card title="Destination URL" icon="arrow-up-right-from-square">
+    The long URL where users are redirected when clicking your short link
+  </Card>
+  
+  <Card title="Short Link" icon="link">
+    The complete short link combining domain and key (e.g., `dub.sh/github`)
+  </Card>
+</CardGroup>
+
+## Advanced Link Features
+
+### UTM Parameters
+
+Automatically append UTM parameters to your destination URLs for campaign tracking:
+
+```typescript
+// Example: Creating a link with UTM parameters
+const link = {
+  domain: "dub.sh",
+  key: "summer-sale",
+  url: "https://example.com/products",
+  utm_source: "twitter",
+  utm_medium: "social",
+  utm_campaign: "summer_sale",
+  utm_term: "shoes",
+  utm_content: "banner_ad"
+};
+```
+
+The link schema supports these UTM fields:
+- `utm_source` - The referrer (e.g., google, newsletter)
+- `utm_medium` - Marketing medium (e.g., cpc, email, social)
+- `utm_campaign` - Campaign name (e.g., summer_sale)
+- `utm_term` - Paid keywords
+- `utm_content` - Differentiate similar content
+
+### Device Targeting
+
+Redirect users to different URLs based on their device:
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the link editor
+    2. Scroll to "Device Targeting"
+    3. Enable iOS and/or Android targeting
+    4. Enter the specific URLs for each platform
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    const link = {
+      domain: "dub.sh",
+      key: "app",
+      url: "https://example.com", // Default URL
+      ios: "https://apps.apple.com/app/example",
+      android: "https://play.google.com/store/apps/details?id=com.example"
+    };
+    ```
+  </Tab>
+</Tabs>
+
+<Info>
+Device targeting is available on Pro plans and above. Users on desktop will be redirected to the default URL.
+</Info>
+
+### Geographic Targeting
+
+Redirect users to different URLs based on their location:
+
+```typescript
+// Example: Geographic targeting by country
+const link = {
+  domain: "dub.sh",
+  key: "store",
+  url: "https://example.com", // Default URL
+  geo: {
+    "US": "https://example.com/us",
+    "GB": "https://example.com/uk",
+    "DE": "https://example.com/de"
+  }
+};
+```
+
+Use 2-letter ISO 3166-1 country codes for geographic targeting.
+
+### Link Expiration
+
+Set an expiration date and optional expired URL:
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the link editor
+    2. Find "Link Expiration"
+    3. Set the expiration date and time
+    4. Optionally set an "Expired URL" to redirect users after expiration
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    const link = {
+      domain: "dub.sh",
+      key: "promo",
+      url: "https://example.com/sale",
+      expiresAt: "2024-12-31T23:59:59Z",
+      expiredUrl: "https://example.com/expired"
+    };
+    ```
+  </Tab>
+</Tabs>
+
+### Password Protection
+
+Protect your links with a password:
+
+```typescript
+const link = {
+  domain: "dub.sh",
+  key: "private",
+  url: "https://example.com/private",
+  password: "secure123"
+};
+```
+
+<Warning>
+Store passwords securely. Once set, passwords cannot be retrieved, only updated.
+</Warning>
+
+## Organizing Links
+
+### Folders
+
+Organize your links into folders for better management:
+
+<Steps>
+  <Step title="Create a Folder">
+    Click "New Folder" in the links dashboard sidebar.
+  </Step>
+  
+  <Step title="Name Your Folder">
+    Give your folder a descriptive name (e.g., "Marketing Campaigns").
+  </Step>
+  
+  <Step title="Add Links">
+    Move links to folders by selecting them and choosing "Move to Folder".
+  </Step>
+</Steps>
+
+Folder properties from the schema:
+- Supports nested organization
+- Each link can belong to one folder
+- Folders can be archived or deleted
+
+### Tags
+
+Tag links for flexible categorization:
+
+```typescript
+// Example: Creating a link with tags
+const link = {
+  domain: "dub.sh",
+  key: "blog-post",
+  url: "https://example.com/blog/post",
+  tagNames: ["blog", "content", "marketing"]
+};
+```
+
+<Info>
+Unlike folders, links can have multiple tags, making them ideal for cross-categorization.
+</Info>
+
+## Bulk Operations
+
+### Bulk Edit
+
+Update multiple links at once:
+
+1. Select multiple links using checkboxes
+2. Click "Bulk Edit" in the toolbar
+3. Choose properties to update (tags, folder, archived status, etc.)
+4. Apply changes to all selected links
+
+### Bulk Delete
+
+Delete multiple links efficiently:
+
+```typescript
+// API Example: Bulk delete
+const response = await fetch('/api/links/bulk?workspaceId=ws_123', {
+  method: 'DELETE',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    linkIds: ['link_abc', 'link_def', 'link_ghi']
+  })
+});
+```
+
+<Warning>
+Bulk delete operations are permanent and cannot be undone. Consider archiving links instead.
+</Warning>
+
+## Link States
+
+### Archived Links
+
+Archive links to hide them from your main view without deleting:
+
+- Archived links remain accessible via their short URLs
+- Analytics data is preserved
+- Can be unarchived at any time
+- Doesn't count toward your link limit
+
+### Disabled Links
+
+Temporarily disable links:
+
+```typescript
+const link = {
+  domain: "dub.sh",
+  key: "temp",
+  url: "https://example.com",
+  disabledAt: new Date().toISOString()
+};
+```
+
+Disabled links return a 404 when accessed.
+
+## Link Metadata
+
+### Custom OG Tags
+
+Customize social media previews with proxy mode:
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Enable "Proxy" in the link editor
+    2. Add a custom title (up to 120 characters)
+    3. Add a description (up to 240 characters)
+    4. Upload or provide an image URL
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    const link = {
+      domain: "dub.sh",
+      key: "product",
+      url: "https://example.com/product",
+      proxy: true,
+      title: "Check out this amazing product!",
+      description: "Limited time offer - get 50% off today",
+      image: "https://example.com/og-image.png"
+    };
+    ```
+  </Tab>
+</Tabs>
+
+### Comments
+
+Add internal notes to links:
+
+```typescript
+const link = {
+  domain: "dub.sh",
+  key: "campaign",
+  url: "https://example.com/campaign",
+  comments: "Q1 2024 marketing campaign - expires end of March"
+};
+```
+
+Comments are internal-only and not visible to end users.
+
+## Link Statistics
+
+Each link tracks comprehensive statistics:
+
+- `clicks` - Total number of clicks
+- `leads` - Number of leads generated
+- `conversions` - Number of conversions
+- `sales` - Total sales count
+- `saleAmount` - Revenue in cents
+- `lastClicked` - Timestamp of most recent click
+
+<Note>
+Statistics are updated in real-time and can be viewed in the analytics dashboard or retrieved via API.
+</Note>
+
+## External IDs and Multi-Tenancy
+
+### External IDs
+
+Map links to your own database:
+
+```typescript
+const link = {
+  domain: "dub.sh",
+  key: "customer-portal",
+  url: "https://example.com/portal",
+  externalId: "ext_customer_12345"
+};
+```
+
+### Tenant IDs
+
+Support multi-tenant applications:
+
+```typescript
+const link = {
+  domain: "dub.sh",
+  key: "client-link",
+  url: "https://example.com",
+  tenantId: "tenant_acme_corp"
+};
+```
+
+<Info>
+External IDs must be unique per workspace. Use them to maintain references between Dub links and your application's data.
+</Info>
+
+## API Reference
+
+For detailed API documentation on link management, see:
+
+- [Create Link](/api-reference/links/create)
+- [Update Link](/api-reference/links/update)
+- [Delete Link](/api-reference/links/delete)
+- [List Links](/api-reference/links/list)
+- [Bulk Create](/api-reference/links/bulk-create)
+- [Bulk Update](/api-reference/links/bulk-update)
+- [Bulk Delete](/api-reference/links/bulk-delete)
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Descriptive Keys" icon="tag">
+    Choose memorable, descriptive keys for your short links (e.g., `/summer-sale` instead of `/x7k9`)
+  </Card>
+  
+  <Card title="Organize with Folders" icon="folder">
+    Group related links in folders for easier management and reporting
+  </Card>
+  
+  <Card title="Tag Strategically" icon="tags">
+    Use consistent tagging conventions across your team for better filtering and analytics
+  </Card>
+  
+  <Card title="Archive, Don't Delete" icon="box-archive">
+    Archive old links instead of deleting to preserve analytics and avoid broken links
+  </Card>
+</CardGroup>

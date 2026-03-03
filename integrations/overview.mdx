@@ -1,0 +1,174 @@
+---
+title: "Integrations Overview"
+description: "Connect Dub with your favorite tools to automate workflows and sync conversion data across your stack."
+---
+
+## Introduction
+
+Dub provides powerful integrations to help you connect your link tracking and conversion data with the tools you already use. Whether you need to send conversion events to analytics platforms, sync data with your CRM, or automate workflows, Dub's integrations make it seamless.
+
+## Available Integrations
+
+<CardGroup cols={2}>
+  <Card title="Webhooks" icon="webhook" href="/integrations/webhooks">
+    Receive real-time events for link clicks, leads, sales, and more
+  </Card>
+  <Card title="Analytics Platforms" icon="chart-line" href="/integrations/analytics-platforms">
+    Send conversion data to Segment, Singular, and other analytics tools
+  </Card>
+  <Card title="HubSpot" icon="hubspot">
+    Sync leads and sales to your HubSpot CRM automatically
+  </Card>
+  <Card title="Slack" icon="slack">
+    Get notifications about conversions and events in Slack
+  </Card>
+  <Card title="Shopify" icon="shopping-cart">
+    Track e-commerce conversions from your Shopify store
+  </Card>
+  <Card title="Stripe" icon="stripe">
+    Automatically track sales from Stripe payments
+  </Card>
+</CardGroup>
+
+## Integration Types
+
+### Native Integrations
+
+Native integrations are built directly into Dub and can be configured from your workspace settings. These include:
+
+- **HubSpot**: Automatically sync conversion events to HubSpot contacts and deals
+- **Slack**: Receive real-time notifications about conversions in your Slack channels
+- **Shopify**: Track orders from your Shopify store as conversions
+- **Stripe**: Automatically create sales when payments are processed
+
+### OAuth-Based Integrations
+
+Some integrations use OAuth for secure authentication:
+
+<Steps>
+  <Step title="Navigate to Integrations">
+    Go to your workspace settings and click on the "Integrations" tab.
+  </Step>
+  <Step title="Connect Integration">
+    Click "Connect" on the integration you want to add and authorize Dub to access your account.
+  </Step>
+  <Step title="Configure Settings">
+    Set up any integration-specific settings like event triggers or field mappings.
+  </Step>
+  <Step title="Test Connection">
+    Use the test feature to verify the integration is working correctly.
+  </Step>
+</Steps>
+
+## Webhook-Based Integrations
+
+For maximum flexibility, use Dub's webhook system to send events to any endpoint. This enables you to:
+
+- Build custom integrations with any tool
+- Process events in your own backend
+- Connect to platforms not directly supported
+
+<Card title="Learn about Webhooks" icon="arrow-right" href="/integrations/webhooks">
+  Set up webhooks to receive real-time conversion events
+</Card>
+
+## Analytics Platform Integrations
+
+Send conversion data to popular analytics platforms:
+
+<CardGroup cols={2}>
+  <Card title="Segment" icon="chart-simple">
+    Forward events to Segment for unified customer data
+  </Card>
+  <Card title="Singular" icon="chart-mixed">
+    Track marketing attribution with Singular
+  </Card>
+</CardGroup>
+
+<Card title="View Analytics Integrations" icon="arrow-right" href="/integrations/analytics-platforms">
+  Learn how to set up analytics platform integrations
+</Card>
+
+## Installation via API
+
+You can also install and manage integrations programmatically using the Dub API. This is useful for:
+
+- Setting up integrations across multiple workspaces
+- Automating integration configuration
+- Building custom onboarding flows
+
+```typescript apps/web/lib/integrations/install.ts
+export const installIntegration = async ({
+  userId,
+  workspaceId,
+  integrationId,
+  credentials,
+}: InstallIntegration) => {
+  const installation = await prisma.installedIntegration.upsert({
+    create: {
+      userId,
+      projectId: workspaceId,
+      integrationId,
+      credentials,
+    },
+    update: {
+      credentials,
+    },
+    where: {
+      userId_integrationId_projectId: {
+        userId,
+        projectId: workspaceId,
+        integrationId,
+      },
+    },
+  });
+
+  return installation;
+};
+```
+
+## Common Use Cases
+
+### Lead Attribution
+
+Track which marketing channels drive the most qualified leads by connecting Dub with your CRM:
+
+1. User clicks a Dub link from a marketing campaign
+2. Dub tracks the click with UTM parameters and device data
+3. User signs up and is created in your CRM
+4. Integration sends the click attribution data to the CRM contact
+
+### E-commerce Attribution
+
+Measure the ROI of your marketing campaigns by tracking sales:
+
+1. Customer clicks a Dub link from an affiliate or ad
+2. Customer completes a purchase in your store
+3. Shopify or Stripe integration sends order data to Dub
+4. Dub attributes the sale to the original click and partner
+
+### Partner Payouts
+
+Automate commission tracking for affiliate and referral programs:
+
+1. Partner shares their unique Dub link
+2. Customer clicks the link and makes a purchase
+3. Dub creates a commission record for the partner
+4. Webhook notifies your system to process the payout
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Set Up Webhooks" icon="webhook" href="/integrations/webhooks">
+    Configure webhooks to receive real-time events
+  </Card>
+  <Card title="Analytics Platforms" icon="chart-line" href="/integrations/analytics-platforms">
+    Connect your analytics tools to track conversions
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Explore the full API for custom integrations
+  </Card>
+  <Card title="Conversion Tracking" icon="bullseye" href="/features/conversion-tracking">
+    Learn how to track leads and sales
+  </Card>
+</CardGroup>

@@ -1,0 +1,245 @@
+---
+title: Go SDK
+description: Official Go SDK for Dub's link management platform
+---
+
+The Dub Go SDK provides an idiomatic Go interface to interact with the Dub API from Go applications.
+
+## Installation
+
+Install the SDK using go get:
+
+```bash
+go get github.com/dubinc/dub-go
+```
+
+## Authentication
+
+Initialize the SDK with your API key from the [Dub Dashboard](https://app.dub.co/settings/tokens):
+
+```go
+package main
+
+import (
+    "context"
+    "os"
+    dub "github.com/dubinc/dub-go"
+)
+
+func main() {
+    client := dub.New(
+        dub.WithSecurity(os.Getenv("DUB_API_KEY")),
+    )
+}
+```
+
+<Note>
+  Store your API key securely in environment variables. Never commit it to version control.
+</Note>
+
+## Quick Start
+
+### Create a Short Link
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    dub "github.com/dubinc/dub-go"
+    "github.com/dubinc/dub-go/models/components"
+)
+
+func main() {
+    client := dub.New(
+        dub.WithSecurity(os.Getenv("DUB_API_KEY")),
+    )
+
+    ctx := context.Background()
+    
+    link, err := client.Links.Create(ctx, &components.CreateLinkRequest{
+        URL:    "https://example.com/long-url",
+        Domain: dub.String("your-domain.com"),
+        Key:    dub.String("custom-key"),
+    })
+    
+    if err != nil {
+        panic(err)
+    }
+    
+    fmt.Println(link.ShortLink) // https://your-domain.com/custom-key
+}
+```
+
+### List Links
+
+Retrieve links from your workspace with optional filtering:
+
+```go
+links, err := client.Links.List(ctx, &operations.ListLinksRequest{
+    Search:   dub.String("example"),
+    PageSize: dub.Int64(10),
+})
+
+if err != nil {
+    panic(err)
+}
+
+for _, link := range links.Result {
+    fmt.Printf("%s -> %s\n", link.ShortLink, link.URL)
+    fmt.Printf("Clicks: %d\n", link.Clicks)
+    fmt.Printf("Created: %s\n\n", link.CreatedAt)
+}
+```
+
+### Update a Link
+
+```go
+updatedLink, err := client.Links.Update(ctx, "clx1...", &components.UpdateLinkRequest{
+    URL: dub.String("https://example.com/new-destination"),
+})
+
+if err != nil {
+    panic(err)
+}
+```
+
+### Delete a Link
+
+```go
+err := client.Links.Delete(ctx, "clx1...")
+if err != nil {
+    panic(err)
+}
+```
+
+## Domain Management
+
+### List Domains
+
+```go
+domains, err := client.Domains.List(ctx, &operations.ListDomainsRequest{})
+
+if err != nil {
+    panic(err)
+}
+
+for _, domain := range domains.Result {
+    fmt.Println(domain.Slug)
+}
+```
+
+### Get Domain Details
+
+```go
+domain, err := client.Domains.Get(ctx, "your-domain.com")
+if err != nil {
+    panic(err)
+}
+
+fmt.Printf("Domain: %s\n", domain.Slug)
+fmt.Printf("Verified: %t\n", domain.Verified)
+```
+
+## Customer Tracking
+
+### List Customers
+
+Retrieve customers using their external ID:
+
+```go
+customers, err := client.Customers.List(ctx, &operations.ListCustomersRequest{
+    ExternalID:            dub.String("user_123"),
+    IncludeExpandedFields: dub.Bool(true),
+})
+
+if err != nil {
+    panic(err)
+}
+
+var customer *components.Customer
+if len(customers) > 0 {
+    customer = &customers[0]
+}
+```
+
+## Conversion Tracking
+
+### Track Lead Conversions
+
+```go
+err := client.Track.Lead(ctx, &components.LeadEvent{
+    ClickID:            dubID,
+    EventName:          "Sign Up",
+    CustomerExternalID: dub.String("user_123"),
+    CustomerName:       dub.String("John Doe"),
+    CustomerEmail:      dub.String("john@example.com"),
+    CustomerAvatar:     dub.String("https://example.com/avatar.jpg"),
+})
+
+if err != nil {
+    panic(err)
+}
+```
+
+### Track Sale Conversions
+
+```go
+err := client.Track.Sale(ctx, &components.SaleEvent{
+    ClickID:            dubID,
+    EventName:          "Purchase",
+    CustomerExternalID: dub.String("user_123"),
+    Amount:             99.99,
+    Currency:           dub.String("USD"),
+    Metadata: map[string]string{
+        "order_id":   "order_456",
+        "product_id": "prod_789",
+    },
+})
+
+if err != nil {
+    panic(err)
+}
+```
+
+## Error Handling
+
+Always check for errors when making API calls:
+
+```go
+link, err := client.Links.Create(ctx, &components.CreateLinkRequest{
+    URL:    "https://example.com",
+    Domain: dub.String("your-domain.com"),
+})
+
+if err != nil {
+    log.Printf("Failed to create link: %v", err)
+    return
+}
+```
+
+## Context Support
+
+All SDK methods accept a context for cancellation and timeouts:
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+
+link, err := client.Links.Create(ctx, &components.CreateLinkRequest{
+    URL: "https://example.com",
+})
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the complete API documentation
+  </Card>
+  <Card title="Client-Side Tracking" icon="chart-line" href="/sdks/client-side/overview">
+    Add analytics tracking to your website
+  </Card>
+</CardGroup>

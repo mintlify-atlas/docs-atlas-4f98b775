@@ -1,0 +1,455 @@
+---
+title: Next.js Integration
+description: Integrate Dub analytics and conversion tracking in Next.js applications with App Router support
+---
+
+Integrate Dub's analytics and conversion tracking seamlessly into your Next.js application with full App Router support.
+
+## Installation
+
+Install the required packages:
+
+<CodeGroup>
+```bash npm
+npm install @dub/analytics dub
+```
+
+```bash pnpm
+pnpm add @dub/analytics dub
+```
+
+```bash yarn
+yarn add @dub/analytics dub
+```
+</CodeGroup>
+
+## Setup
+
+### Environment Variables
+
+Add your Dub API key to `.env.local`:
+
+```bash
+DUB_API_KEY=dub_xxxxxx
+```
+
+Get your API key from the [Dub Dashboard](https://app.dub.co/settings/tokens).
+
+### Initialize Dub Client
+
+Create a Dub client instance in `lib/dub.ts`:
+
+```typescript
+import { Dub } from "dub";
+
+export const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+```
+
+## Add Analytics Component
+
+### App Router
+
+Add the Analytics component to your root layout:
+
+```tsx
+// app/layout.tsx
+import { Analytics as DubAnalytics } from '@dub/analytics/react';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <DubAnalytics />
+      </body>
+    </html>
+  );
+}
+```
+
+### Pages Router
+
+Add the Analytics component to `_app.tsx`:
+
+```tsx
+// pages/_app.tsx
+import { Analytics as DubAnalytics } from '@dub/analytics/react';
+import type { AppProps } from 'next/app';
+
+export default function App({ Component, pageProps }: AppProps) {
+  return (
+    <>
+      <Component {...pageProps} />
+      <DubAnalytics />
+    </>
+  );
+}
+```
+
+## Configuration
+
+Customize the Analytics component for your domain:
+
+```tsx
+import { Analytics as DubAnalytics } from '@dub/analytics/react';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <DubAnalytics
+          apiHost="/_proxy/dub"
+          cookieOptions={{
+            domain: process.env.VERCEL ? '.yourdomain.com' : 'localhost',
+            maxAge: 60 * 60 * 24 * 90, // 90 days
+          }}
+          domainsConfig={{
+            refer: 'refer.yourdomain.com',
+          }}
+        />
+      </body>
+    </html>
+  );
+}
+```
+
+## Track Conversions
+
+### Server Actions (App Router)
+
+Create a server action to track lead conversions:
+
+```typescript
+// app/actions/track-lead.ts
+"use server";
+
+import { dub } from '@/lib/dub';
+import { cookies } from 'next/headers';
+
+export async function trackLead({
+  id,
+  name,
+  email,
+  avatar,
+}: {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  avatar?: string | null;
+}) {
+  try {
+    const cookieStore = await cookies();
+    const dubId = cookieStore.get('dub_id')?.value;
+    
+    if (dubId) {
+      await dub.track.lead({
+        clickId: dubId,
+        eventName: 'Sign Up',
+        customerExternalId: id,
+        customerName: name,
+        customerEmail: email,
+        customerAvatar: avatar,
+      });
+      
+      // Clear the cookie
+      cookieStore.set('dub_id', '', {
+        expires: new Date(0),
+      });
+    }
+    
+    return { ok: true };
+  } catch (error) {
+    console.error('Error tracking lead:', error);
+    return { ok: false, error: (error as Error).message };
+  }
+}
+```
+
+Call the server action from your component:
+
+```tsx
+"use client";
+
+import { trackLead } from '@/app/actions/track-lead';
+import { useEffect } from 'react';
+
+export function SignupForm() {
+  const handleSignup = async (formData: FormData) => {
+    // Create user
+    const user = await createUser(formData);
+    
+    // Track conversion
+    await trackLead({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    });
+  };
+  
+  return (
+    <form action={handleSignup}>
+      {/* Form fields */}
+    </form>
+  );
+}
+```
+
+### API Routes
+
+Create an API route to track conversions:
+
+```typescript
+// app/api/track-lead/route.ts
+import { dub } from '@/lib/dub';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(req: NextRequest) {
+  const { userId, name, email } = await req.json();
+  const dubId = req.cookies.get('dub_id')?.value;
+  
+  if (dubId) {
+    await dub.track.lead({
+      clickId: dubId,
+      eventName: 'Sign Up',
+      customerExternalId: userId,
+      customerName: name,
+      customerEmail: email,
+    });
+  }
+  
+  const res = NextResponse.json({ success: true });
+  res.cookies.set('dub_id', '', { expires: new Date(0) });
+  return res;
+}
+```
+
+## Track Sales
+
+Track purchase conversions:
+
+```typescript
+"use server";
+
+import { dub } from '@/lib/dub';
+import { cookies } from 'next/headers';
+
+export async function trackSale({
+  userId,
+  amount,
+  orderId,
+}: {
+  userId: string;
+  amount: number;
+  orderId: string;
+}) {
+  try {
+    const cookieStore = await cookies();
+    const dubId = cookieStore.get('dub_id')?.value;
+    
+    if (dubId) {
+      await dub.track.sale({
+        clickId: dubId,
+        eventName: 'Purchase',
+        customerExternalId: userId,
+        amount,
+        currency: 'USD',
+        metadata: {
+          orderId,
+        },
+      });
+      
+      cookieStore.set('dub_id', '', { expires: new Date(0) });
+    }
+    
+    return { ok: true };
+  } catch (error) {
+    console.error('Error tracking sale:', error);
+    return { ok: false, error: (error as Error).message };
+  }
+}
+```
+
+## Link Management
+
+Create and manage short links from your Next.js app:
+
+### Create Links
+
+```typescript
+"use server";
+
+import { dub } from '@/lib/dub';
+
+export async function createShortLink(url: string, key?: string) {
+  const link = await dub.links.create({
+    url,
+    domain: 'yourdomain.com',
+    key,
+  });
+  
+  return link.shortLink;
+}
+```
+
+### List Links
+
+```typescript
+"use server";
+
+import { dub } from '@/lib/dub';
+
+export async function getLinks(search?: string) {
+  const links = await dub.links.list({
+    search,
+    pageSize: 50,
+  });
+  
+  return links.result;
+}
+```
+
+## Middleware Integration
+
+Add custom middleware to enhance tracking:
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+  
+  // Extract dub_id from URL if present
+  const dubId = request.nextUrl.searchParams.get('dub_id');
+  
+  if (dubId) {
+    // Set cookie with dub_id
+    response.cookies.set('dub_id', dubId, {
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+  }
+  
+  return response;
+}
+
+export const config = {
+  matcher: '/:path*',
+};
+```
+
+## Customer Tracking
+
+Retrieve customer information:
+
+```typescript
+"use server";
+
+import { dub } from '@/lib/dub';
+
+export async function getCustomer(userId: string) {
+  const customers = await dub.customers.list({
+    externalId: userId,
+    includeExpandedFields: true,
+  });
+  
+  return customers.length > 0 ? customers[0] : null;
+}
+```
+
+## TypeScript Types
+
+Full type safety with TypeScript:
+
+```typescript
+import { Dub } from 'dub';
+import type { Link, Domain, Customer } from 'dub';
+import type { AnalyticsProps } from '@dub/analytics/react';
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+// Typed responses
+const link: Link = await dub.links.create({
+  url: 'https://example.com',
+});
+```
+
+## Best Practices
+
+<Note>
+  - Store API keys in environment variables
+  - Track conversions server-side for security
+  - Clear the `dub_id` cookie after tracking
+  - Use server actions for better type safety
+  - Handle errors gracefully
+</Note>
+
+## Example Application
+
+Complete Next.js example with authentication:
+
+```tsx
+// app/providers.tsx
+"use client";
+
+import { Analytics as DubAnalytics } from '@dub/analytics/react';
+import { useUser } from '@/hooks/use-user';
+import { trackLead } from '@/actions/track-lead';
+import { useEffect } from 'react';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  const { user } = useUser();
+  
+  useEffect(() => {
+    if (user && !user.tracked) {
+      trackLead({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      });
+    }
+  }, [user]);
+  
+  return (
+    <>
+      {children}
+      <DubAnalytics
+        cookieOptions={{
+          domain: process.env.VERCEL ? '.yourdomain.com' : 'localhost',
+        }}
+      />
+    </>
+  );
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the complete API
+  </Card>
+  <Card title="Conversion Tracking" icon="chart-line" href="/features/conversion-tracking">
+    Learn about conversions
+  </Card>
+  <Card title="React Component" icon="react" href="/sdks/client-side/react">
+    React SDK documentation
+  </Card>
+  <Card title="Server SDKs" icon="server" href="/sdks/overview">
+    Server-side SDKs
+  </Card>
+</CardGroup>

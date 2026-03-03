@@ -1,0 +1,106 @@
+---
+title: Dub CLI
+description: Manage your Dub short links directly from the command line
+---
+
+The Dub CLI is a command-line tool for creating and managing short links with the Dub API directly from your terminal.
+
+## Installation
+
+Install the Dub CLI globally using npm:
+
+```bash
+npm install -g dub-cli
+```
+
+Verify the installation:
+
+```bash
+dub --version
+```
+
+## Quick Start
+
+<Steps>
+  <Step title="Authenticate">
+    Log into your Dub account:
+    
+    ```bash
+    dub login
+    ```
+    
+    This will open your browser for OAuth authentication.
+  </Step>
+  
+  <Step title="Configure Domain">
+    Select your workspace domain:
+    
+    ```bash
+    dub domains
+    ```
+  </Step>
+  
+  <Step title="Create a Short Link">
+    Create your first short link:
+    
+    ```bash
+    dub shorten https://example.com/long-url
+    ```
+  </Step>
+</Steps>
+
+## Available Commands
+
+The CLI provides the following commands:
+
+| Command | Description |
+|---------|-------------|
+| `dub login` | Log into the Dub platform |
+| `dub config` | View your configured credentials |
+| `dub domains` | Configure your workspace domain |
+| `dub shorten [url] [key]` | Create a short link |
+| `dub links [options]` | Search for links in your workspace |
+| `dub help [command]` | Display help for a command |
+
+## Features
+
+- **OAuth Authentication** - Secure login with your Dub account
+- **Domain Management** - Select and configure workspace domains
+- **Link Creation** - Create short links with custom keys
+- **Link Search** - Search and filter your existing links
+- **Interactive Prompts** - User-friendly prompts for missing parameters
+- **Colored Output** - Clear, readable terminal output
+
+## Authentication
+
+The CLI uses OAuth 2.0 for secure authentication:
+
+```bash
+dub login
+```
+
+This command:
+1. Opens your browser for authentication
+2. Starts a local callback server
+3. Stores credentials securely
+4. Grants access with the following scopes:
+   - `links.read` - Read links
+   - `links.write` - Create and update links
+   - `domains.read` - Read domains
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="CLI Installation" icon="download" href="/sdks/cli/installation">
+    Detailed installation instructions
+  </Card>
+  <Card title="CLI Commands" icon="terminal" href="/sdks/cli/commands">
+    Complete command reference
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the API
+  </Card>
+  <Card title="Server SDKs" icon="server" href="/sdks/overview">
+    Use programmatic SDKs
+  </Card>
+</CardGroup>

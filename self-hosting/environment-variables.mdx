@@ -1,0 +1,646 @@
+---
+title: "Environment Variables"
+description: "Complete reference for configuring Dub environment variables"
+---
+
+## Overview
+
+Dub requires various environment variables for configuration. This page provides a comprehensive reference for all available options.
+
+<Note>
+  All environment variables should be set in the `.env` file in the `apps/web` directory.
+</Note>
+
+## Required Variables
+
+These variables are essential for Dub to function properly.
+
+### Application Configuration
+
+<ParamField path="NEXT_PUBLIC_APP_NAME" type="string" required>
+  The name of your application.
+  
+  **Default:** `Dub`
+  
+  ```bash
+  NEXT_PUBLIC_APP_NAME=Dub
+  ```
+</ParamField>
+
+<ParamField path="NEXT_PUBLIC_APP_DOMAIN" type="string" required>
+  The primary domain where your Dub instance is hosted.
+  
+  **Example:** `dub.co`
+  
+  ```bash
+  NEXT_PUBLIC_APP_DOMAIN=yourdomain.com
+  ```
+</ParamField>
+
+<ParamField path="NEXT_PUBLIC_APP_SHORT_DOMAIN" type="string" required>
+  The domain used for shortened links.
+  
+  **Example:** `dub.sh`
+  
+  ```bash
+  NEXT_PUBLIC_APP_SHORT_DOMAIN=yourdomain.link
+  ```
+</ParamField>
+
+### Analytics & Tracking
+
+<ParamField path="TINYBIRD_API_KEY" type="string" required>
+  Your Tinybird API authentication token. Required for analytics functionality.
+  
+  Get your token at: [Tinybird Auth Tokens](https://www.tinybird.co/docs/concepts/auth-tokens.html)
+  
+  ```bash
+  TINYBIRD_API_KEY=p.ey...
+  ```
+</ParamField>
+
+<ParamField path="TINYBIRD_API_URL" type="string" required>
+  The Tinybird API endpoint for your region.
+  
+  **Default:** `https://api.tinybird.co`
+  
+  **Regions:**
+  - US East: `https://api.tinybird.co`
+  - EU: `https://api.eu-central-1.tinybird.co`
+  - US West: `https://api.us-west-2.tinybird.co`
+  
+  [View all regions](https://www.tinybird.co/docs/api-reference/api-reference.html#regions-and-endpoints)
+  
+  ```bash
+  TINYBIRD_API_URL=https://api.tinybird.co
+  ```
+</ParamField>
+
+### Domain Management
+
+<ParamField path="PROJECT_ID_VERCEL" type="string" required>
+  Your Vercel project ID for domain management.
+  
+  Learn more: [Vercel Domains API Template](https://vercel.com/templates/next.js/domains-api)
+  
+  ```bash
+  PROJECT_ID_VERCEL=prj_...
+  ```
+</ParamField>
+
+<ParamField path="TEAM_ID_VERCEL" type="string" required>
+  Your Vercel team ID.
+  
+  ```bash
+  TEAM_ID_VERCEL=team_...
+  ```
+</ParamField>
+
+<ParamField path="AUTH_BEARER_TOKEN" type="string" required>
+  Vercel authentication bearer token for API access.
+  
+  ```bash
+  AUTH_BEARER_TOKEN=...
+  ```
+</ParamField>
+
+### Redis & Caching
+
+<ParamField path="UPSTASH_REDIS_REST_URL" type="string" required>
+  Upstash Redis REST API URL.
+  
+  Get started: [Upstash Redis Guide](https://upstash.com/docs/redis/overall/getstarted)
+  
+  ```bash
+  UPSTASH_REDIS_REST_URL=https://....upstash.io
+  ```
+</ParamField>
+
+<ParamField path="UPSTASH_REDIS_REST_TOKEN" type="string" required>
+  Upstash Redis REST API token.
+  
+  ```bash
+  UPSTASH_REDIS_REST_TOKEN=...
+  ```
+</ParamField>
+
+### Background Jobs & Queues
+
+<ParamField path="QSTASH_TOKEN" type="string" required>
+  Upstash QStash token for background job processing.
+  
+  Get started: [Upstash QStash Guide](https://upstash.com/docs/qstash/overall/getstarted)
+  
+  ```bash
+  QSTASH_TOKEN=...
+  ```
+</ParamField>
+
+<ParamField path="QSTASH_CURRENT_SIGNING_KEY" type="string" required>
+  Current QStash signing key for webhook verification.
+  
+  ```bash
+  QSTASH_CURRENT_SIGNING_KEY=...
+  ```
+</ParamField>
+
+<ParamField path="QSTASH_NEXT_SIGNING_KEY" type="string" required>
+  Next QStash signing key for key rotation.
+  
+  ```bash
+  QSTASH_NEXT_SIGNING_KEY=...
+  ```
+</ParamField>
+
+### Database
+
+<ParamField path="DATABASE_URL" type="string" required>
+  MySQL database connection URL.
+  
+  **Format:** `mysql://username:password@host:port/database`
+  
+  Get started with PlanetScale: [Connect Node.js App](https://planetscale.com/docs/tutorials/connect-nodejs-app)
+  
+  ```bash
+  DATABASE_URL="mysql://user:password@host:3306/dub"
+  ```
+</ParamField>
+
+<ParamField path="PLANETSCALE_DATABASE_URL" type="string">
+  PlanetScale HTTP proxy URL for local development.
+  
+  **Local development:**
+  ```bash
+  PLANETSCALE_DATABASE_URL="http://root:unused@localhost:3900/planetscale"
+  ```
+</ParamField>
+
+### Authentication
+
+<ParamField path="NEXTAUTH_SECRET" type="string" required>
+  Secret key for NextAuth.js session encryption. Must be a random 32+ character string.
+  
+  Generate one at: [generate-secret.vercel.app/32](https://generate-secret.vercel.app/32)
+  
+  ```bash
+  NEXTAUTH_SECRET=your-super-secret-key-here-32-chars-minimum
+  ```
+</ParamField>
+
+<ParamField path="NEXTAUTH_URL" type="string">
+  The canonical URL of your site. Required for localhost development.
+  
+  **Production:** Auto-detected by Vercel
+  
+  **Local development:**
+  ```bash
+  NEXTAUTH_URL=http://localhost:8888
+  ```
+</ParamField>
+
+### Email Configuration
+
+<ParamField path="RESEND_API_KEY" type="string" required>
+  Resend API key for sending emails (production).
+  
+  Get your API key: [Resend API Keys](https://resend.com/api-keys)
+  
+  ```bash
+  RESEND_API_KEY=re_...
+  ```
+</ParamField>
+
+<ParamField path="RESEND_WEBHOOK_SECRET" type="string">
+  Resend webhook secret for email event verification.
+  
+  ```bash
+  RESEND_WEBHOOK_SECRET=whsec_...
+  ```
+</ParamField>
+
+<ParamField path="SMTP_HOST" type="string">
+  SMTP server hostname (recommended for local development).
+  
+  **Local development with MailHog:**
+  ```bash
+  SMTP_HOST=localhost
+  ```
+</ParamField>
+
+<ParamField path="SMTP_PORT" type="number">
+  SMTP server port.
+  
+  **Default:** `1025` (MailHog)
+  
+  ```bash
+  SMTP_PORT=1025
+  ```
+</ParamField>
+
+<ParamField path="SMTP_USER" type="string">
+  SMTP authentication username.
+  
+  ```bash
+  SMTP_USER=smtpUser
+  ```
+</ParamField>
+
+<ParamField path="SMTP_PASSWORD" type="string">
+  SMTP authentication password.
+  
+  ```bash
+  SMTP_PASSWORD=smtpPassword
+  ```
+</ParamField>
+
+<ParamField path="UNSUBSCRIBE_TOKEN_SECRET" type="string">
+  Secret for email unsubscribe token generation. Falls back to `NEXTAUTH_SECRET` if not set.
+  
+  ```bash
+  UNSUBSCRIBE_TOKEN_SECRET=...
+  ```
+</ParamField>
+
+## Optional Variables
+
+These variables enable additional features and integrations.
+
+### Payments & Subscriptions
+
+<ParamField path="NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" type="string">
+  Stripe publishable key for client-side payment forms.
+  
+  ```bash
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_...
+  ```
+</ParamField>
+
+<ParamField path="STRIPE_SECRET_KEY" type="string">
+  Stripe secret key for server-side operations.
+  
+  ```bash
+  STRIPE_SECRET_KEY=sk_...
+  ```
+</ParamField>
+
+<ParamField path="STRIPE_WEBHOOK_SECRET" type="string">
+  Stripe webhook secret for payment event verification.
+  
+  ```bash
+  STRIPE_WEBHOOK_SECRET=whsec_...
+  ```
+</ParamField>
+
+<ParamField path="STRIPE_CONNECT_WEBHOOK_SECRET" type="string">
+  Stripe Connect webhook secret.
+  
+  ```bash
+  STRIPE_CONNECT_WEBHOOK_SECRET=whsec_...
+  ```
+</ParamField>
+
+<ParamField path="STRIPE_CONNECT_V2_WEBHOOK_SECRET" type="string">
+  Stripe Connect v2 webhook secret.
+  
+  ```bash
+  STRIPE_CONNECT_V2_WEBHOOK_SECRET=whsec_...
+  ```
+</ParamField>
+
+<ParamField path="STRIPE_APP_WEBHOOK_SECRET" type="string">
+  Stripe App webhook secret.
+  
+  ```bash
+  STRIPE_APP_WEBHOOK_SECRET=whsec_...
+  ```
+</ParamField>
+
+### OAuth Providers
+
+<ParamField path="GOOGLE_CLIENT_ID" type="string">
+  Google OAuth client ID for Google login.
+  
+  Setup guide: [NextAuth.js Google Provider](https://next-auth.js.org/providers/google)
+  
+  ```bash
+  GOOGLE_CLIENT_ID=...
+  ```
+</ParamField>
+
+<ParamField path="GOOGLE_CLIENT_SECRET" type="string">
+  Google OAuth client secret.
+  
+  ```bash
+  GOOGLE_CLIENT_SECRET=...
+  ```
+</ParamField>
+
+<ParamField path="GITHUB_CLIENT_ID" type="string">
+  GitHub OAuth app client ID for GitHub login.
+  
+  Setup guide: [NextAuth.js GitHub Provider](https://next-auth.js.org/providers/github)
+  
+  ```bash
+  GITHUB_CLIENT_ID=...
+  ```
+</ParamField>
+
+<ParamField path="GITHUB_CLIENT_SECRET" type="string">
+  GitHub OAuth app client secret.
+  
+  ```bash
+  GITHUB_CLIENT_SECRET=...
+  ```
+</ParamField>
+
+<ParamField path="FRAMER_CLIENT_ID" type="string">
+  Framer OAuth client ID for Framer login.
+  
+  ```bash
+  FRAMER_CLIENT_ID=...
+  ```
+</ParamField>
+
+<ParamField path="FRAMER_CLIENT_SECRET" type="string">
+  Framer OAuth client secret.
+  
+  ```bash
+  FRAMER_CLIENT_SECRET=...
+  ```
+</ParamField>
+
+### Edge Configuration
+
+<ParamField path="EDGE_CONFIG" type="string">
+  Vercel Edge Config connection string for admin features like rate limiting and user banning.
+  
+  Create one: [Vercel Edge Config](https://vercel.com/docs/storage/edge-config)
+  
+  ```bash
+  EDGE_CONFIG=https://edge-config.vercel.com/...
+  ```
+  
+  <Note>
+    If you don't need admin features, you can remove `lib/edge-config.ts` and all references to `EDGE_CONFIG` from the codebase.
+  </Note>
+</ParamField>
+
+<ParamField path="EDGE_CONFIG_ID" type="string">
+  Vercel Edge Config ID.
+  
+  ```bash
+  EDGE_CONFIG_ID=ecfg_...
+  ```
+</ParamField>
+
+### Link Import Tools
+
+<ParamField path="BITLY_CLIENT_ID" type="string">
+  Bitly OAuth client ID for importing Bitly links.
+  
+  Apply for API access: [Bitly Developers](https://dev.bitly.com/)
+  
+  Learn more: [Migration Assistants](https://dub.co/blog/migration-assistants)
+  
+  ```bash
+  BITLY_CLIENT_ID=...
+  ```
+</ParamField>
+
+<ParamField path="BITLY_CLIENT_SECRET" type="string">
+  Bitly OAuth client secret.
+  
+  ```bash
+  BITLY_CLIENT_SECRET=...
+  ```
+</ParamField>
+
+### Media & Assets
+
+<ParamField path="UNSPLASH_ACCESS_KEY" type="string">
+  Unsplash API key for custom link preview images.
+  
+  Apply for access: [Unsplash Developers](https://unsplash.com/developers)
+  
+  ```bash
+  UNSPLASH_ACCESS_KEY=...
+  ```
+</ParamField>
+
+<ParamField path="STORAGE_ACCESS_KEY_ID" type="string">
+  S3-compatible storage access key ID.
+  
+  ```bash
+  STORAGE_ACCESS_KEY_ID=...
+  ```
+</ParamField>
+
+<ParamField path="STORAGE_SECRET_ACCESS_KEY" type="string">
+  S3-compatible storage secret access key.
+  
+  ```bash
+  STORAGE_SECRET_ACCESS_KEY=...
+  ```
+</ParamField>
+
+<ParamField path="STORAGE_ENDPOINT" type="string">
+  S3-compatible storage endpoint URL.
+  
+  ```bash
+  STORAGE_ENDPOINT=https://s3.amazonaws.com
+  ```
+</ParamField>
+
+<ParamField path="STORAGE_BASE_URL" type="string">
+  Base URL for accessing stored assets.
+  
+  ```bash
+  STORAGE_BASE_URL=https://assets.yourdomain.com
+  ```
+</ParamField>
+
+<ParamField path="STORAGE_PUBLIC_BUCKET" type="string">
+  S3 bucket name for public assets.
+  
+  ```bash
+  STORAGE_PUBLIC_BUCKET=dub-public
+  ```
+</ParamField>
+
+<ParamField path="STORAGE_PRIVATE_BUCKET" type="string">
+  S3 bucket name for private assets.
+  
+  ```bash
+  STORAGE_PRIVATE_BUCKET=dub-private
+  ```
+</ParamField>
+
+### Monitoring & Logging
+
+<ParamField path="AXIOM_TOKEN" type="string">
+  Axiom API token for logging and monitoring.
+  
+  Get your token: [Axiom Authentication](https://axiom.co/docs/rest-api/authentication)
+  
+  ```bash
+  AXIOM_TOKEN=xaat-...
+  ```
+</ParamField>
+
+<ParamField path="AXIOM_DATASET" type="string">
+  Axiom dataset name for storing logs.
+  
+  ```bash
+  AXIOM_DATASET=dub-logs
+  ```
+</ParamField>
+
+<ParamField path="DUB_SLACK_HOOK_CRON" type="string">
+  Slack webhook URL for cron job notifications.
+  
+  ```bash
+  DUB_SLACK_HOOK_CRON=https://hooks.slack.com/services/...
+  ```
+  
+  <Note>
+    You can remove these by deleting references to `DUB_SLACK_HOOK_CRON` and `DUB_SLACK_HOOK_LINKS` from the codebase.
+  </Note>
+</ParamField>
+
+<ParamField path="DUB_SLACK_HOOK_LINKS" type="string">
+  Slack webhook URL for link-related notifications.
+  
+  ```bash
+  DUB_SLACK_HOOK_LINKS=https://hooks.slack.com/services/...
+  ```
+</ParamField>
+
+### Customer Support
+
+<ParamField path="PLAIN_API_KEY" type="string">
+  Plain API key for customer support integration.
+  
+  Get your API key: [Plain API Documentation](https://www.plain.com/docs/api)
+  
+  ```bash
+  PLAIN_API_KEY=plainApiKey_...
+  ```
+</ParamField>
+
+<ParamField path="PLAIN_WEBHOOK_SECRET" type="string">
+  Plain webhook secret for event verification.
+  
+  ```bash
+  PLAIN_WEBHOOK_SECRET=...
+  ```
+</ParamField>
+
+### AI Features
+
+<ParamField path="ANTHROPIC_API_KEY" type="string">
+  Anthropic API key for AI-powered features.
+  
+  ```bash
+  ANTHROPIC_API_KEY=sk-ant-...
+  ```
+</ParamField>
+
+### Development Tools
+
+<ParamField path="NEXT_PUBLIC_NGROK_URL" type="string">
+  ngrok URL for testing webhooks in local development.
+  
+  Get started: [ngrok](https://ngrok.com/)
+  
+  ```bash
+  NEXT_PUBLIC_NGROK_URL=https://....ngrok.io
+  ```
+</ParamField>
+
+### Integrations
+
+<ParamField path="SHOPIFY_WEBHOOK_SECRET" type="string">
+  Shopify App webhook secret.
+  
+  ```bash
+  SHOPIFY_WEBHOOK_SECRET=...
+  ```
+</ParamField>
+
+## Internal Use Variables
+
+These variables are used internally by Dub.co and are not required for self-hosted installations.
+
+<Warning>
+  The following variables are for official Dub.co infrastructure only. You do not need to set these for self-hosted instances.
+</Warning>
+
+- `NEXT_PUBLIC_IS_DUB` - Enables Dub.co specific features
+- `CRON_SECRET` - Secret for authenticating cron jobs
+- `SLACK_CLIENT_ID` / `SLACK_CLIENT_SECRET` / `SLACK_SIGNING_SECRET` - Slack integration
+- `DYNADOT_API_KEY` / `DYNADOT_BASE_URL` / `DYNADOT_COUPON` - Domain registration
+- `TWITTER_CLIENT_ID` / `TWITTER_CLIENT_SECRET` - Twitter verification
+- `TIKTOK_CLIENT_ID` / `TIKTOK_CLIENT_SECRET` - TikTok verification
+- `LINKEDIN_CLIENT_ID` / `LINKEDIN_CLIENT_SECRET` - LinkedIn verification
+- `YOUTUBE_API_KEY` - YouTube verification
+- `SCRAPECREATORS_API_KEY` - Creator scraping service
+- `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` / `PAYPAL_WEBHOOK_ID` - PayPal integration
+- `STRIPE_APP_SECRET_KEY_TEST` / `STRIPE_APP_SECRET_KEY` / `STRIPE_APP_SECRET_KEY_SANDBOX` - Stripe app keys
+- `FIRECRAWL_API_KEY` - Program lander generation
+- `SINGULAR_WEBHOOK_TOKEN` - Singular events
+- `HUBSPOT_CLIENT_ID` / `HUBSPOT_CLIENT_SECRET` - HubSpot integration
+
+## Environment File Template
+
+Here's a minimal `.env` template to get started:
+
+```bash
+# Application
+NEXT_PUBLIC_APP_NAME=Dub
+NEXT_PUBLIC_APP_DOMAIN=yourdomain.com
+NEXT_PUBLIC_APP_SHORT_DOMAIN=short.yourdomain.com
+
+# Database
+DATABASE_URL="mysql://user:password@host:3306/dub"
+
+# Authentication
+NEXTAUTH_SECRET=your-super-secret-key-minimum-32-characters
+NEXTAUTH_URL=https://yourdomain.com
+
+# Tinybird Analytics
+TINYBIRD_API_KEY=p.ey...
+TINYBIRD_API_URL=https://api.tinybird.co
+
+# Vercel Domains API
+PROJECT_ID_VERCEL=prj_...
+TEAM_ID_VERCEL=team_...
+AUTH_BEARER_TOKEN=...
+
+# Upstash Redis
+UPSTASH_REDIS_REST_URL=https://....upstash.io
+UPSTASH_REDIS_REST_TOKEN=...
+
+# Upstash QStash
+QSTASH_TOKEN=...
+QSTASH_CURRENT_SIGNING_KEY=...
+QSTASH_NEXT_SIGNING_KEY=...
+
+# Email (Choose Resend OR SMTP)
+RESEND_API_KEY=re_...
+# OR for local development:
+# SMTP_HOST=localhost
+# SMTP_PORT=1025
+```
+
+## Validation
+
+To verify your environment configuration:
+
+1. Check that all required variables are set
+2. Test database connectivity with `pnpm prisma:studio`
+3. Verify Redis connection by starting the dev server
+4. Test email delivery by signing up for an account
+
+<Note>
+  Missing required environment variables will cause the application to fail at startup with clear error messages indicating which variables are missing.
+</Note>

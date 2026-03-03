@@ -1,0 +1,239 @@
+---
+title: Track a Sale
+description: Track a sale conversion event for a customer
+---
+
+## Endpoint
+
+<ParamField path="method" type="string">
+  POST
+</ParamField>
+
+<ParamField path="url" type="string">
+  https://api.dub.co/track/sale
+</ParamField>
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+```bash
+Authorization: Bearer DUB_API_KEY
+```
+
+## Request Body
+
+<ParamField body="customerExternalId" type="string" required>
+  The unique ID of the customer in your system. Will be used to identify and attribute all future events to this customer.
+  
+  Maximum length: 100 characters
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  The amount of the sale in cents (for all two-decimal currencies). If the sale is in a zero-decimal currency, pass the full integer value (e.g. `1437` JPY).
+  
+  Must be a non-negative integer.
+  
+  [Learn more about currency handling](https://d.to/currency)
+</ParamField>
+
+<ParamField body="currency" type="string" default="usd">
+  The currency of the sale. Accepts ISO 4217 currency codes. Sales will be automatically converted and stored as USD at the latest exchange rates.
+  
+  [Learn more about currency handling](https://d.to/currency)
+</ParamField>
+
+<ParamField body="eventName" type="string" default="Purchase">
+  The name of the sale event. Recommended format: `Invoice paid` or `Subscription created`.
+  
+  Maximum length: 255 characters
+  
+  Example: `Invoice paid`
+</ParamField>
+
+<ParamField body="paymentProcessor" type="enum" default="custom">
+  The payment processor via which the sale was made.
+  
+  Options: `stripe`, `shopify`, `polar`, `paddle`, `revenuecat`, `custom`
+</ParamField>
+
+<ParamField body="invoiceId" type="string">
+  The invoice ID of the sale. Can be used as an idempotency key – only one sale event can be recorded for a given invoice ID.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Additional metadata to be stored with the sale event. Max 10,000 characters when stringified.
+</ParamField>
+
+<ParamField body="leadEventName" type="string">
+  The name of the lead event that occurred before the sale (case-sensitive). This is used to associate the sale event with a particular lead event (instead of the latest lead event for a link-customer combination, which is the default behavior).
+  
+  For direct sale tracking, this field can also be used to specify the lead event name.
+  
+  Example: `Cloned template 1481267`
+</ParamField>
+
+<ParamField body="clickId" type="string">
+  [For direct sale tracking]: The unique ID of the click that the sale conversion event is attributed to. You can read this value from `dub_id` cookie.
+</ParamField>
+
+<ParamField body="customerName" type="string">
+  [For direct sale tracking]: The name of the customer. If not passed, a random name will be generated (e.g. "Big Red Caribou").
+  
+  Maximum length: 100 characters
+</ParamField>
+
+<ParamField body="customerEmail" type="string">
+  [For direct sale tracking]: The email address of the customer.
+  
+  Maximum length: 100 characters
+</ParamField>
+
+<ParamField body="customerAvatar" type="string">
+  [For direct sale tracking]: The avatar URL of the customer.
+</ParamField>
+
+## Response
+
+<ResponseField name="eventName" type="string">
+  The name of the sale event
+</ResponseField>
+
+<ResponseField name="customer" type="object | null">
+  <ResponseField name="id" type="string">
+    The unique ID of the customer
+  </ResponseField>
+  
+  <ResponseField name="name" type="string | null">
+    The name of the customer
+  </ResponseField>
+  
+  <ResponseField name="email" type="string | null">
+    The email of the customer
+  </ResponseField>
+  
+  <ResponseField name="avatar" type="string | null">
+    The avatar URL of the customer
+  </ResponseField>
+  
+  <ResponseField name="externalId" type="string | null">
+    The external ID of the customer
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="sale" type="object | null">
+  <ResponseField name="amount" type="number">
+    The sale amount in cents
+  </ResponseField>
+  
+  <ResponseField name="currency" type="string">
+    The currency code (e.g. "usd")
+  </ResponseField>
+  
+  <ResponseField name="paymentProcessor" type="string">
+    The payment processor used
+  </ResponseField>
+  
+  <ResponseField name="invoiceId" type="string | null">
+    The invoice ID if provided
+  </ResponseField>
+  
+  <ResponseField name="metadata" type="object | null">
+    Additional metadata
+  </ResponseField>
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.dub.co/track/sale \
+  -H "Authorization: Bearer DUB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerExternalId": "user_123456",
+    "amount": 4999,
+    "currency": "usd",
+    "eventName": "Invoice paid",
+    "paymentProcessor": "stripe",
+    "invoiceId": "inv_1234567890"
+  }'
+```
+
+```typescript TypeScript SDK
+import { Dub } from 'dub';
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const response = await dub.track.sale({
+  customerExternalId: 'user_123456',
+  amount: 4999,
+  currency: 'usd',
+  eventName: 'Invoice paid',
+  paymentProcessor: 'stripe',
+  invoiceId: 'inv_1234567890',
+});
+```
+
+```python Python SDK
+from dub import Dub
+
+dub = Dub(token=os.environ["DUB_API_KEY"])
+
+response = dub.track.sale(
+    customer_external_id="user_123456",
+    amount=4999,
+    currency="usd",
+    event_name="Invoice paid",
+    payment_processor="stripe",
+    invoice_id="inv_1234567890"
+)
+```
+
+```go Go SDK
+import (
+    "context"
+    "github.com/dubinc/dub-go"
+    "github.com/dubinc/dub-go/models/operations"
+)
+
+client := dub.New(
+    dub.WithSecurity(os.Getenv("DUB_API_KEY")),
+)
+
+response, err := client.Track.Sale(context.Background(), &operations.TrackSaleRequest{
+    CustomerExternalID: "user_123456",
+    Amount: 4999,
+    Currency: dub.String("usd"),
+    EventName: dub.String("Invoice paid"),
+    PaymentProcessor: dub.String("stripe"),
+    InvoiceID: dub.String("inv_1234567890"),
+})
+```
+
+</CodeGroup>
+
+## Response Example
+
+```json
+{
+  "eventName": "Invoice paid",
+  "customer": {
+    "id": "cus_xyz123",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "avatar": null,
+    "externalId": "user_123456"
+  },
+  "sale": {
+    "amount": 4999,
+    "currency": "usd",
+    "paymentProcessor": "stripe",
+    "invoiceId": "inv_1234567890",
+    "metadata": null
+  }
+}
+```

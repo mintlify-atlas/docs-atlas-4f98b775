@@ -1,0 +1,202 @@
+---
+title: TypeScript SDK
+description: Official TypeScript/JavaScript SDK for Dub's link management platform
+---
+
+The Dub TypeScript SDK provides a type-safe interface to interact with the Dub API from Node.js and TypeScript applications.
+
+## Installation
+
+Install the SDK using your preferred package manager:
+
+<CodeGroup>
+```bash npm
+npm install dub
+```
+
+```bash pnpm
+pnpm add dub
+```
+
+```bash yarn
+yarn add dub
+```
+</CodeGroup>
+
+## Authentication
+
+Initialize the SDK with your API key from the [Dub Dashboard](https://app.dub.co/settings/tokens):
+
+```typescript
+import { Dub } from "dub";
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+```
+
+<Note>
+  Store your API key securely in environment variables. Never commit it to version control.
+</Note>
+
+## Quick Start
+
+### Create a Short Link
+
+```typescript
+import { Dub } from "dub";
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const link = await dub.links.create({
+  url: "https://example.com/long-url",
+  domain: "your-domain.com",
+  key: "custom-key",
+});
+
+console.log(link.shortLink); // https://your-domain.com/custom-key
+```
+
+### List Links
+
+Retrieve links from your workspace with optional filtering:
+
+```typescript
+const links = await dub.links.list({
+  search: "example",
+  pageSize: 10,
+});
+
+links.result.forEach((link) => {
+  console.log(`${link.shortLink} -> ${link.url}`);
+  console.log(`Clicks: ${link.clicks}`);
+  console.log(`Created: ${new Date(link.createdAt).toLocaleDateString()}`);
+});
+```
+
+### Update a Link
+
+```typescript
+const updatedLink = await dub.links.update({
+  linkId: "clx1...",
+  url: "https://example.com/new-destination",
+});
+```
+
+### Delete a Link
+
+```typescript
+await dub.links.delete({
+  linkId: "clx1...",
+});
+```
+
+## Domain Management
+
+### List Domains
+
+```typescript
+const domains = await dub.domains.list();
+
+domains.result.forEach((domain) => {
+  console.log(domain.slug);
+});
+```
+
+### Get Domain Details
+
+```typescript
+const domain = await dub.domains.get({
+  slug: "your-domain.com",
+});
+```
+
+## Customer Tracking
+
+### List Customers
+
+Retrieve customers using their external ID:
+
+```typescript
+const customers = await dub.customers.list({
+  externalId: "user_123",
+  includeExpandedFields: true,
+});
+
+const customer = customers.length > 0 ? customers[0] : null;
+```
+
+## Conversion Tracking
+
+### Track Lead Conversions
+
+```typescript
+await dub.track.lead({
+  clickId: dubId,
+  eventName: "Sign Up",
+  customerExternalId: "user_123",
+  customerName: "John Doe",
+  customerEmail: "john@example.com",
+  customerAvatar: "https://example.com/avatar.jpg",
+});
+```
+
+### Track Sale Conversions
+
+```typescript
+await dub.track.sale({
+  clickId: dubId,
+  eventName: "Purchase",
+  customerExternalId: "user_123",
+  amount: 99.99,
+  currency: "USD",
+  metadata: {
+    orderId: "order_456",
+    productId: "prod_789",
+  },
+});
+```
+
+## Error Handling
+
+Wrap SDK calls in try-catch blocks to handle errors:
+
+```typescript
+try {
+  const link = await dub.links.create({
+    url: "https://example.com",
+    domain: "your-domain.com",
+  });
+} catch (error) {
+  console.error("Failed to create link:", error);
+}
+```
+
+## TypeScript Support
+
+The SDK is written in TypeScript and provides full type definitions:
+
+```typescript
+import { Dub } from "dub";
+import type { Link, Domain } from "dub";
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+// TypeScript will infer the correct types
+const link: Link = await dub.links.create({
+  url: "https://example.com",
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the complete API documentation
+  </Card>
+  <Card title="Client-Side Tracking" icon="chart-line" href="/sdks/client-side/overview">
+    Add analytics tracking to your website
+  </Card>
+</CardGroup>

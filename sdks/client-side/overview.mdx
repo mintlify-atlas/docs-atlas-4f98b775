@@ -1,0 +1,149 @@
+---
+title: Client-Side SDKs
+description: Track user interactions and conversions with Dub's client-side analytics tools
+---
+
+Dub's client-side SDKs enable you to track clicks, conversions, and user attribution directly on your website. These tools work seamlessly with the server-side SDKs to provide complete attribution tracking.
+
+## Available Client-Side Tools
+
+<CardGroup cols={2}>
+  <Card title="Analytics Script" icon="chart-line" href="/sdks/client-side/analytics-script">
+    Lightweight JavaScript snippet for any website
+  </Card>
+  <Card title="React" icon="react" href="/sdks/client-side/react">
+    React component for analytics and embeds
+  </Card>
+  <Card title="Next.js" icon="N" href="/sdks/client-side/nextjs">
+    Next.js integration with App Router support
+  </Card>
+</CardGroup>
+
+## How It Works
+
+Client-side tracking enables end-to-end conversion attribution:
+
+<Steps>
+  <Step title="User Clicks Short Link">
+    A user clicks your Dub short link with a unique click ID
+  </Step>
+  
+  <Step title="Click ID Stored">
+    The Dub script automatically stores the click ID as a first-party cookie
+  </Step>
+  
+  <Step title="User Converts">
+    When the user signs up or makes a purchase, you track the conversion
+  </Step>
+  
+  <Step title="Attribution Matched">
+    Dub matches the conversion to the original click for complete attribution
+  </Step>
+</Steps>
+
+## Features
+
+All client-side tools provide:
+
+- **Automatic Click Tracking** - Stores click IDs from Dub short links
+- **First-Party Cookies** - Uses your domain for better privacy and tracking
+- **Conversion Events** - Track leads, sales, and custom events
+- **Privacy Compliant** - No third-party tracking or PII storage
+- **Lightweight** - Minimal performance impact on your site
+
+## Installation Methods
+
+Choose the installation method that fits your tech stack:
+
+### Vanilla JavaScript
+
+Add the analytics script to any HTML website:
+
+```html
+<script 
+  defer
+  src="https://www.dubcdn.com/analytics/script.js" 
+></script>
+```
+
+### React/Next.js
+
+Install the `@dub/analytics` package:
+
+```bash
+npm install @dub/analytics
+```
+
+### Google Tag Manager
+
+Add the Dub script through GTM for centralized tag management.
+
+## Tracking Conversions
+
+After installing the client-side script, use the server-side SDK to track conversions:
+
+<CodeGroup>
+```typescript TypeScript
+import { Dub } from "dub";
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+// Track a lead conversion
+await dub.track.lead({
+  clickId: dubId, // From cookie
+  eventName: "Sign Up",
+  customerExternalId: user.id,
+  customerEmail: user.email,
+});
+```
+
+```python Python
+from dub import Dub
+
+dub = Dub(token=os.environ["DUB_API_KEY"])
+
+# Track a lead conversion
+dub.track.lead(
+    click_id=dub_id,  # From cookie
+    event_name="Sign Up",
+    customer_external_id=user.id,
+    customer_email=user.email
+)
+```
+</CodeGroup>
+
+## Cookie Storage
+
+The Dub script stores click IDs in a first-party cookie:
+
+- **Cookie Name**: `dub_id`
+- **Domain**: Your website domain
+- **Duration**: 30 days (configurable)
+- **SameSite**: `Lax`
+- **Secure**: `true` (HTTPS only)
+
+## Privacy Considerations
+
+- No personal data is stored in cookies
+- Only anonymous click IDs are tracked
+- Fully compliant with GDPR and privacy regulations
+- First-party cookies for better browser compatibility
+
+## Next Steps
+
+Choose your implementation method:
+
+<CardGroup cols={2}>
+  <Card title="Analytics Script" icon="code" href="/sdks/client-side/analytics-script">
+    Add to any HTML website
+  </Card>
+  <Card title="React Component" icon="react" href="/sdks/client-side/react">
+    Use in React applications
+  </Card>
+  <Card title="Next.js Integration" icon="N" href="/sdks/client-side/nextjs">
+    Integrate with Next.js
+  </Card>
+  <Card title="Track Conversions" icon="chart-line" href="/features/conversion-tracking">
+    Learn about conversion tracking
+  </Card>
+</CardGroup>

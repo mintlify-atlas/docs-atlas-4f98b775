@@ -1,0 +1,305 @@
+---
+title: CLI Installation
+description: Install and configure the Dub CLI on your system
+---
+
+Learn how to install and set up the Dub CLI for managing short links from your terminal.
+
+## Prerequisites
+
+- Node.js 18 or higher
+- npm, pnpm, or yarn package manager
+- A Dub account ([sign up here](https://app.dub.co))
+
+## Global Installation
+
+Install the CLI globally to use it from anywhere:
+
+<CodeGroup>
+```bash npm
+npm install -g dub-cli
+```
+
+```bash pnpm
+pnpm add -g dub-cli
+```
+
+```bash yarn
+yarn global add dub-cli
+```
+</CodeGroup>
+
+### Verify Installation
+
+Check that the CLI is installed correctly:
+
+```bash
+dub --version
+```
+
+You should see the version number (e.g., `0.0.13`).
+
+## Initial Setup
+
+After installation, authenticate with your Dub account:
+
+<Steps>
+  <Step title="Login">
+    Run the login command:
+    
+    ```bash
+    dub login
+    ```
+    
+    This will:
+    - Open your default browser
+    - Redirect to Dub's authentication page
+    - Start a local server on port 4587
+    - Store credentials securely after authentication
+  </Step>
+  
+  <Step title="Configure Domain">
+    Select your workspace domain:
+    
+    ```bash
+    dub domains
+    ```
+    
+    Use arrow keys to select from your available domains.
+  </Step>
+  
+  <Step title="Verify Configuration">
+    Check your stored credentials:
+    
+    ```bash
+    dub config
+    ```
+    
+    This displays your:
+    - Access token
+    - Configured domain
+    - Token expiration
+  </Step>
+</Steps>
+
+## Local Development Setup
+
+For contributing to the CLI or testing unreleased features:
+
+<Steps>
+  <Step title="Clone Repository">
+    Clone the Dub monorepo:
+    
+    ```bash
+    git clone https://github.com/dubinc/dub.git
+    cd dub/packages/cli
+    ```
+  </Step>
+  
+  <Step title="Install Dependencies">
+    Install the required dependencies:
+    
+    ```bash
+    pnpm install
+    ```
+  </Step>
+  
+  <Step title="Build in Watch Mode">
+    Start the development build:
+    
+    ```bash
+    pnpm dev
+    ```
+    
+    This watches for changes and rebuilds automatically.
+  </Step>
+  
+  <Step title="Run Commands">
+    In a separate terminal, run CLI commands:
+    
+    ```bash
+    pnpm start [command]
+    ```
+    
+    For example:
+    ```bash
+    pnpm start login
+    pnpm start shorten https://example.com
+    ```
+  </Step>
+</Steps>
+
+## Production-like Testing
+
+Test the CLI as it would work after installation:
+
+<Steps>
+  <Step title="Uninstall Existing CLI">
+    If you have the CLI installed globally, remove it first:
+    
+    ```bash
+    npm uninstall -g dub-cli
+    ```
+  </Step>
+  
+  <Step title="Build Package">
+    Build the CLI from source:
+    
+    ```bash
+    cd packages/cli
+    pnpm build
+    ```
+  </Step>
+  
+  <Step title="Link Globally">
+    Link the package to use it globally:
+    
+    ```bash
+    npm link
+    ```
+  </Step>
+  
+  <Step title="Verify">
+    Test the installation:
+    
+    ```bash
+    dub --version
+    dub help
+    ```
+  </Step>
+</Steps>
+
+## Configuration Storage
+
+The CLI stores configuration using `configstore`:
+
+- **macOS**: `~/Library/Preferences/dub-cli-nodejs/`
+- **Linux**: `~/.config/dub-cli-nodejs/`
+- **Windows**: `%APPDATA%\dub-cli-nodejs\Config\`
+
+Configuration includes:
+- Access token
+- Refresh token
+- Selected domain
+- Token expiration time
+
+## Troubleshooting
+
+### Port Already in Use
+
+If port 4587 is already in use during login:
+
+1. Kill the process using the port:
+   ```bash
+   # macOS/Linux
+   lsof -ti:4587 | xargs kill -9
+   
+   # Windows
+   netstat -ano | findstr :4587
+   taskkill /PID <PID> /F
+   ```
+
+2. Try logging in again:
+   ```bash
+   dub login
+   ```
+
+### Command Not Found
+
+If `dub` command is not found after installation:
+
+1. Check npm global bin directory:
+   ```bash
+   npm config get prefix
+   ```
+
+2. Add it to your PATH:
+   ```bash
+   # Add to ~/.bashrc, ~/.zshrc, etc.
+   export PATH="$(npm config get prefix)/bin:$PATH"
+   ```
+
+3. Restart your terminal
+
+### Permission Errors
+
+On macOS/Linux, you may need sudo for global installation:
+
+```bash
+sudo npm install -g dub-cli
+```
+
+Alternatively, configure npm to use a different directory:
+
+```bash
+mkdir ~/.npm-global
+npm config set prefix '~/.npm-global'
+export PATH=~/.npm-global/bin:$PATH
+```
+
+### Authentication Issues
+
+If authentication fails:
+
+1. Clear stored credentials:
+   ```bash
+   rm -rf ~/Library/Preferences/dub-cli-nodejs/  # macOS
+   rm -rf ~/.config/dub-cli-nodejs/              # Linux
+   ```
+
+2. Try logging in again:
+   ```bash
+   dub login
+   ```
+
+## Updating
+
+Update to the latest version:
+
+```bash
+npm update -g dub-cli
+```
+
+Check the current version:
+
+```bash
+dub --version
+```
+
+## Uninstalling
+
+Remove the CLI:
+
+```bash
+npm uninstall -g dub-cli
+```
+
+Remove configuration files:
+
+```bash
+# macOS
+rm -rf ~/Library/Preferences/dub-cli-nodejs/
+
+# Linux
+rm -rf ~/.config/dub-cli-nodejs/
+
+# Windows
+del /f /s /q %APPDATA%\dub-cli-nodejs
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="CLI Commands" icon="terminal" href="/sdks/cli/commands">
+    Learn all available commands
+  </Card>
+  <Card title="CLI Overview" icon="book" href="/sdks/cli/overview">
+    Back to CLI overview
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the API
+  </Card>
+  <Card title="Server SDKs" icon="server" href="/sdks/overview">
+    Use programmatic SDKs
+  </Card>
+</CardGroup>

@@ -1,0 +1,519 @@
+---
+title: "Analytics Platform Integrations"
+description: "Send conversion events from Dub to Segment, Singular, and other analytics platforms for unified customer data and attribution."
+---
+
+## Overview
+
+Dub integrates with popular analytics platforms to help you build a complete picture of your customer journey. Send click, lead, and sale events to your analytics stack to:
+
+- Unify customer data across all touchpoints
+- Measure marketing attribution and ROI
+- Build custom reports and dashboards
+- Trigger automated workflows based on conversions
+
+## Supported Platforms
+
+<CardGroup cols={2}>
+  <Card title="Segment" icon="chart-simple">
+    Send events to Segment's customer data platform
+  </Card>
+  <Card title="Singular" icon="chart-mixed">
+    Track mobile attribution and marketing analytics
+  </Card>
+  <Card title="Custom Webhooks" icon="webhook">
+    Send events to any analytics platform via webhooks
+  </Card>
+</CardGroup>
+
+## Segment Integration
+
+The Segment integration automatically forwards Dub conversion events to your Segment workspace, where they can be routed to your entire analytics stack.
+
+### Event Mapping
+
+Dub events are transformed into Segment's standard event format:
+
+<CodeGroup>
+```json Link Clicked
+{
+  "event": "Link Clicked",
+  "anonymousId": "GWGrkftJdYlZD2mq",
+  "context": {
+    "ip": "185.211.32.242",
+    "integration": {
+      "name": "dub",
+      "version": "1.0.0"
+    },
+    "campaign": {
+      "source": "twitter",
+      "medium": "social",
+      "name": "spring-sale"
+    }
+  },
+  "properties": {
+    "click": {
+      "id": "GWGrkftJdYlZD2mq",
+      "timestamp": "2025-02-03T09:35:57.926Z",
+      "country": "US",
+      "city": "San Jose",
+      "device": "Desktop",
+      "browser": "Chrome",
+      "os": "Mac OS"
+    },
+    "link": {
+      "domain": "dub.sh",
+      "key": "track-test",
+      "url": "https://github.com/dubinc/dub"
+    }
+  }
+}
+```
+
+```json Lead Created
+{
+  "event": "Signup",
+  "userId": "cus_BH6tDUWc9n0Y2pf55tVbk1hc",
+  "context": {
+    "ip": "185.211.32.242",
+    "integration": {
+      "name": "dub",
+      "version": "1.0.0"
+    },
+    "campaign": {
+      "source": "twitter",
+      "medium": "social"
+    }
+  },
+  "properties": {
+    "customer": {
+      "id": "cus_Ql3PvCTbPXBpp6vn7x5oHb5G",
+      "externalId": "cus_BH6tDUWc9n0Y2pf55tVbk1hc",
+      "email": "tiny.beige.badger@example.com",
+      "name": "Tiny Beige Badger"
+    },
+    "click": { ... },
+    "link": { ... }
+  }
+}
+```
+
+```json Sale Created
+{
+  "event": "Subscription",
+  "userId": "cus_jTrfVKYN3Buc3F80JoqBiY0g",
+  "context": {
+    "ip": "185.211.32.242",
+    "integration": {
+      "name": "dub",
+      "version": "1.0.0"
+    }
+  },
+  "properties": {
+    "customer": {
+      "id": "cm25onzuv0001s1bbxchrc0ae",
+      "externalId": "cus_jTrfVKYN3Buc3F80JoqBiY0g",
+      "email": "rural.red.goldfish@example.com"
+    },
+    "sale": {
+      "amount": 100,
+      "currency": "usd",
+      "paymentProcessor": "stripe",
+      "invoiceId": "INV_AUTi534JCiBUVdYmevCSYQ9G"
+    },
+    "revenue": 100,
+    "currency": "usd"
+  }
+}
+```
+</CodeGroup>
+
+### Implementation
+
+The transformation logic converts Dub's webhook payloads to Segment's format:
+
+```typescript lib/integrations/segment/transform.ts
+export const formatEventForSegment = (
+  payload: z.infer<typeof webhookPayloadSchema>,
+) => {
+  const { event, data } = payload;
+
+  switch (event) {
+    case "link.clicked":
+      return transformClickEvent(data);
+    case "lead.created":
+      return transformLeadEvent(data);
+    case "sale.created":
+      return transformSaleEvent(data);
+    case "partner.enrolled":
+      return transformPartnerEnrolledEvent(data);
+    default:
+      throw new Error(`Event ${event} is not supported for Segment.`);
+  }
+};
+
+const transformLeadEvent = (data: LeadEventWebhookPayload) => {
+  const { link, click, customer, eventName } = data;
+
+  return {
+    event: capitalize(eventName),
+    userId: customer.externalId,
+    context: {
+      ip: click.ip,
+      integration,
+      library: integration,
+      ...buildCampaignContext(link),
+    },
+    properties: {
+      click,
+      link,
+      customer,
+    },
+  };
+};
+```
+
+### UTM Parameters
+
+Dub automatically includes UTM parameters from your links in Segment's `campaign` context:
+
+```typescript
+const buildCampaignContext = (link) => {
+  const campaign = {
+    ...(link.utm_campaign && { name: link.utm_campaign }),
+    ...(link.utm_source && { source: link.utm_source }),
+    ...(link.utm_medium && { medium: link.utm_medium }),
+    ...(link.utm_term && { term: link.utm_term }),
+    ...(link.utm_content && { content: link.utm_content }),
+  };
+
+  return Object.keys(campaign).length > 0 ? { campaign } : undefined;
+};
+```
+
+<Note>
+UTM parameters are preserved from the original link and included in all downstream events, enabling campaign attribution in your analytics tools.
+</Note>
+
+## Singular Integration
+
+Singular is a mobile attribution and marketing analytics platform. The Dub integration enables you to track conversions from your mobile app back to Dub links.
+
+### Lead Tracking
+
+Singular sends lead events to Dub with customer information and click attribution:
+
+```typescript lib/integrations/singular/track-lead.ts
+export const trackSingularLeadEvent = async ({
+  queryParams,
+  workspace,
+}) => {
+  const {
+    dub_id: clickId,
+    event_name: eventName,
+    event_attributes: {
+      customer_external_id: customerExternalId,
+      customer_name: customerName,
+      customer_email: customerEmail,
+      customer_avatar: customerAvatar,
+      event_quantity: eventQuantity,
+      mode,
+    },
+  } = singularLeadEventSchema.parse(queryParams);
+
+  return await trackLead({
+    clickId,
+    eventName,
+    customerEmail,
+    customerAvatar,
+    customerExternalId,
+    customerName,
+    eventQuantity,
+    mode,
+    metadata: null,
+    workspace,
+    rawBody: queryParams,
+  });
+};
+```
+
+### Query Parameter Format
+
+Singular sends conversion data via query parameters:
+
+| Parameter | Description | Example |
+|-----------|-------------|----------|
+| `dub_id` | Click ID from Dub | `GWGrkftJdYlZD2mq` |
+| `event_name` | Name of the conversion event | `Purchase` |
+| `event_attributes` | JSON-encoded customer data | `{"customer_external_id":"user_123"}` |
+
+### Event Attributes Schema
+
+The `event_attributes` parameter accepts these fields:
+
+```typescript
+{
+  customer_external_id: string,  // Required: Your customer ID
+  customer_name: string,         // Optional: Customer's name
+  customer_email: string,        // Optional: Customer's email
+  customer_avatar: string,       // Optional: Avatar URL
+  event_quantity: number,        // Optional: Quantity for the event
+  mode: "sync" | "async"        // Optional: Tracking mode
+}
+```
+
+## HubSpot Integration
+
+Sync conversion events directly to HubSpot contacts and deals for complete sales attribution.
+
+### Contact Properties
+
+Dub creates custom properties in HubSpot to store attribution data:
+
+```typescript lib/integrations/hubspot/constants.ts
+export const HUBSPOT_DUB_CONTACT_PROPERTIES = [
+  {
+    label: "Dub Click ID",
+    name: "dub_id",
+    type: "string",
+    fieldType: "text",
+    groupName: "contactinformation",
+    formField: true, // Allow in HubSpot forms
+  },
+  {
+    label: "Dub Link",
+    name: "dub_link",
+    type: "string",
+    fieldType: "text",
+    groupName: "contactinformation",
+  },
+  {
+    label: "Dub Partner Email",
+    name: "dub_partner_email",
+    type: "string",
+    fieldType: "text",
+    groupName: "contactinformation",
+  },
+];
+```
+
+### Lead Tracking Modes
+
+HubSpot integration supports two lead trigger events:
+
+<Tabs>
+  <Tab title="Deal Created">
+    Track a lead when a deal is created for a contact:
+
+    ```typescript
+    if (
+      objectTypeId === "0-3" &&
+      subscriptionType === "object.creation" &&
+      settings.leadTriggerEvent === "dealCreated"
+    ) {
+      const deal = await hubSpotApi.getDeal(objectId);
+      const contact = associations?.contacts?.results?.[0];
+      
+      await trackLead({
+        eventName: `Deal ${properties.dealstage}`,
+        customerExternalId: customer.externalId,
+        customerName: `${contactInfo.properties.firstname} ${contactInfo.properties.lastname}`,
+        customerEmail: contactInfo.properties.email,
+        mode: "async",
+        workspace,
+      });
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Lifecycle Stage Reached">
+    Track a lead when a contact reaches a specific lifecycle stage:
+
+    ```typescript
+    if (
+      objectTypeId === "0-1" &&
+      subscriptionType === "object.propertyChange" &&
+      settings.leadTriggerEvent === "lifecycleStageReached"
+    ) {
+      const contactInfo = await hubSpotApi.getContact(objectId);
+      
+      if (
+        contactInfo.properties.lifecyclestage === settings.leadLifecycleStageId
+      ) {
+        await trackLead({
+          eventName: `Contact ${properties.lifecyclestage}`,
+          customerExternalId: customer.externalId,
+          mode: "async",
+          workspace,
+        });
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Deferred Lead Tracking
+
+For cases where the customer isn't immediately identified, HubSpot stores the click ID and tracks the lead later:
+
+```typescript
+if (objectTypeId === "0-1" && subscriptionType === "object.creation") {
+  const contactInfo = await hubSpotApi.getContact(objectId);
+  
+  if (properties.dub_id) {
+    await trackLead({
+      clickId: properties.dub_id,
+      eventName: "Sign up",
+      customerEmail: properties.email,
+      customerExternalId: properties.email,
+      mode: "deferred",
+      workspace,
+    });
+  }
+}
+```
+
+## Custom Analytics Integrations
+
+For analytics platforms not directly supported, use webhooks to send events to your own backend:
+
+<Steps>
+  <Step title="Create a Webhook">
+    Set up a webhook in your Dub workspace to receive conversion events.
+  </Step>
+  
+  <Step title="Transform Events">
+    Convert Dub's event format to your analytics platform's format.
+  </Step>
+  
+  <Step title="Forward to Platform">
+    Send the transformed events to your analytics platform's API.
+  </Step>
+</Steps>
+
+### Example: Custom Transformation
+
+```typescript
+import { webhookPayloadSchema } from "@dub/api";
+
+export async function POST(req: Request) {
+  const payload = await req.json();
+  const { event, data } = webhookPayloadSchema.parse(payload);
+
+  // Transform to your analytics format
+  const analyticsEvent = {
+    event_type: event,
+    user_id: data.customer?.externalId,
+    timestamp: new Date(data.click.timestamp),
+    properties: {
+      click_id: data.click.id,
+      link_url: data.link.url,
+      country: data.click.country,
+      device: data.click.device,
+      // Add UTM parameters
+      utm_source: data.link.utm_source,
+      utm_medium: data.link.utm_medium,
+      utm_campaign: data.link.utm_campaign,
+    },
+  };
+
+  // Send to your analytics platform
+  await fetch("https://your-analytics-platform.com/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(analyticsEvent),
+  });
+
+  return new Response("OK", { status: 200 });
+}
+```
+
+## Best Practices
+
+### Use External IDs
+
+Always provide a `customerExternalId` when tracking conversions to ensure events can be matched across systems:
+
+```typescript
+await dub.track.lead({
+  clickId: "GWGrkftJdYlZD2mq",
+  eventName: "Signup",
+  customerExternalId: "user_abc123", // Your internal user ID
+  customerEmail: "user@example.com",
+});
+```
+
+### Include Metadata
+
+Pass additional context in the `metadata` field for richer analytics:
+
+```typescript
+await dub.track.sale({
+  clickId: "GWGrkftJdYlZD2mq",
+  eventName: "Purchase",
+  customerExternalId: "user_abc123",
+  saleAmount: 9900, // Amount in cents
+  metadata: {
+    product_id: "prod_abc",
+    plan: "pro",
+    billing_cycle: "annual",
+  },
+});
+```
+
+### Monitor Integration Health
+
+Check your integration logs regularly to ensure events are being delivered:
+
+1. Navigate to Settings > Integrations
+2. Click on the integration to view recent events
+3. Check for any failed deliveries or errors
+
+## Troubleshooting
+
+### Events Not Appearing
+
+If events aren't showing up in your analytics platform:
+
+<Steps>
+  <Step title="Verify Integration Status">
+    Check that the integration is enabled and credentials are valid.
+  </Step>
+  
+  <Step title="Check Event Logs">
+    Review the integration event logs in Dub for delivery errors.
+  </Step>
+  
+  <Step title="Validate Event Format">
+    Ensure your events include required fields like `customerExternalId`.
+  </Step>
+  
+  <Step title="Test Connection">
+    Use the test feature to send a sample event and verify delivery.
+  </Step>
+</Steps>
+
+### Attribution Not Working
+
+For accurate attribution, ensure:
+
+- UTM parameters are set on your Dub links
+- Click IDs are being stored and passed to conversion events
+- Customer external IDs are consistent across systems
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Webhooks" icon="webhook" href="/integrations/webhooks">
+    Learn about webhook events and security
+  </Card>
+  <Card title="Conversion Tracking" icon="bullseye" href="/features/conversion-tracking">
+    Set up lead and sale tracking
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/track/lead">
+    Track conversions via the API
+  </Card>
+  <Card title="Affiliate Programs" icon="users" href="/features/affiliate-programs">
+    Build affiliate and referral programs
+  </Card>
+</CardGroup>

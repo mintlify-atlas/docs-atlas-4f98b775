@@ -1,0 +1,255 @@
+---
+title: Bulk create links
+description: Bulk create up to 100 links for the authenticated workspace.
+---
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+```bash
+Authorization: Bearer <token>
+```
+
+## Endpoint
+
+<ParamField path="method" type="string" required>
+  POST
+</ParamField>
+
+<ParamField path="endpoint" type="string" required>
+  /links/bulk
+</ParamField>
+
+## Request Body
+
+The request body should be an array of link objects. You can create up to 100 links at a time.
+
+<ParamField body="[].url" type="string" required>
+  The destination URL of the short link.
+  
+  **Example:** `https://google.com`
+</ParamField>
+
+<ParamField body="[].domain" type="string">
+  The domain of the short link (without protocol). If not provided, the primary domain for the workspace will be used.
+</ParamField>
+
+<ParamField body="[].key" type="string">
+  The short link slug. If not provided, a random 7-character slug will be generated.
+</ParamField>
+
+<ParamField body="[].externalId" type="string">
+  The ID of the link in your database.
+</ParamField>
+
+<ParamField body="[].tenantId" type="string">
+  The ID of the tenant that created the link inside your system.
+</ParamField>
+
+<ParamField body="[].trackConversion" type="boolean">
+  Whether to track conversions for the short link.
+</ParamField>
+
+<ParamField body="[].archived" type="boolean">
+  Whether the short link is archived.
+</ParamField>
+
+<ParamField body="[].tagIds" type="array">
+  The unique IDs of the tags assigned to the short link.
+</ParamField>
+
+<ParamField body="[].tagNames" type="array">
+  The unique name of the tags assigned to the short link (case insensitive).
+</ParamField>
+
+<ParamField body="[].folderId" type="string">
+  The unique ID existing folder to assign the short link to.
+</ParamField>
+
+<ParamField body="[].comments" type="string">
+  The comments for the short link.
+</ParamField>
+
+<ParamField body="[].proxy" type="boolean">
+  Whether the short link uses Custom Link Previews feature.
+</ParamField>
+
+<ParamField body="[].title" type="string">
+  The custom link preview title (og:title).
+</ParamField>
+
+<ParamField body="[].description" type="string">
+  The custom link preview description (og:description).
+</ParamField>
+
+<ParamField body="[].image" type="string">
+  The custom link preview image (og:image).
+</ParamField>
+
+See the [Create a link](/api-reference/links/create) endpoint for a full list of available fields.
+
+## Response
+
+Returns an array of created links or error objects. Each item in the array will be either a successfully created link or an error object.
+
+<ResponseField name="[].id" type="string">
+  The unique ID of the short link (success case).
+</ResponseField>
+
+<ResponseField name="[].domain" type="string">
+  The domain of the short link (success case).
+</ResponseField>
+
+<ResponseField name="[].key" type="string">
+  The short link slug (success case).
+</ResponseField>
+
+<ResponseField name="[].url" type="string">
+  The destination URL of the short link (success case).
+</ResponseField>
+
+<ResponseField name="[].shortLink" type="string">
+  The full URL of the short link (success case).
+</ResponseField>
+
+<ResponseField name="[].error" type="string">
+  The error message (error case).
+</ResponseField>
+
+<ResponseField name="[].code" type="string">
+  The error code (error case).
+</ResponseField>
+
+<ResponseField name="[].link" type="object">
+  The link that caused the error (error case).
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://api.dub.co/links/bulk" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {
+      "url": "https://google.com",
+      "domain": "dub.sh",
+      "key": "google"
+    },
+    {
+      "url": "https://github.com",
+      "domain": "dub.sh",
+      "key": "github"
+    }
+  ]'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.dub.co/links/bulk', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <token>',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify([
+    {
+      url: 'https://google.com',
+      domain: 'dub.sh',
+      key: 'google'
+    },
+    {
+      url: 'https://github.com',
+      domain: 'dub.sh',
+      key: 'github'
+    }
+  ])
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.post(
+  'https://api.dub.co/links/bulk',
+  headers={
+    'Authorization': 'Bearer <token>',
+    'Content-Type': 'application/json'
+  },
+  json=[
+    {
+      'url': 'https://google.com',
+      'domain': 'dub.sh',
+      'key': 'google'
+    },
+    {
+      'url': 'https://github.com',
+      'domain': 'dub.sh',
+      'key': 'github'
+    }
+  ]
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+[
+  {
+    "id": "clux0rgak00011...",
+    "domain": "dub.sh",
+    "key": "google",
+    "url": "https://google.com",
+    "archived": false,
+    "expiresAt": null,
+    "expiredUrl": null,
+    "password": null,
+    "proxy": false,
+    "title": null,
+    "description": null,
+    "image": null,
+    "rewrite": false,
+    "doIndex": false,
+    "tags": [],
+    "comments": null,
+    "shortLink": "https://dub.sh/google",
+    "qrCode": "https://api.dub.co/qr?url=https://dub.sh/google",
+    "workspaceId": "ws_123",
+    "clicks": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "clux0rgak00022...",
+    "domain": "dub.sh",
+    "key": "github",
+    "url": "https://github.com",
+    "archived": false,
+    "expiresAt": null,
+    "expiredUrl": null,
+    "password": null,
+    "proxy": false,
+    "title": null,
+    "description": null,
+    "image": null,
+    "rewrite": false,
+    "doIndex": false,
+    "tags": [],
+    "comments": null,
+    "shortLink": "https://dub.sh/github",
+    "qrCode": "https://api.dub.co/qr?url=https://dub.sh/github",
+    "workspaceId": "ws_123",
+    "clicks": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+]
+```
+
+</ResponseExample>

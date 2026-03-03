@@ -1,0 +1,664 @@
+---
+title: "Webhooks"
+description: "Receive real-time events from Dub for link clicks, leads, sales, partner enrollments, and more via webhooks."
+---
+
+## Overview
+
+Webhooks allow you to receive real-time notifications when events occur in your Dub workspace. Instead of polling the API, Dub will send HTTP POST requests to your configured endpoint whenever a subscribed event happens.
+
+## Webhook Events
+
+Dub supports the following webhook triggers:
+
+### Workspace-Level Events
+
+These events can be configured at the workspace level and apply to all links:
+
+| Event | Description |
+|-------|-------------|
+| `link.created` | Triggered when a new link is created |
+| `link.updated` | Triggered when a link is updated |
+| `link.deleted` | Triggered when a link is deleted |
+| `lead.created` | Triggered when a lead conversion is tracked |
+| `sale.created` | Triggered when a sale conversion is tracked |
+
+### Link-Level Events
+
+These events are configured per-link and only fire for specific links:
+
+| Event | Description |
+|-------|-------------|
+| `link.clicked` | Triggered when a specific link is clicked |
+
+### Program-Level Events
+
+These events are for partner program management:
+
+| Event | Description |
+|-------|-------------|
+| `partner.application_submitted` | Triggered when a partner applies to join a program |
+| `partner.enrolled` | Triggered when a partner is enrolled in a program |
+| `commission.created` | Triggered when a commission is created for a partner |
+| `bounty.created` | Triggered when a bounty is created |
+| `bounty.updated` | Triggered when a bounty is updated |
+| `payout.confirmed` | Triggered when a payout is confirmed |
+
+## Event Schema
+
+All webhook payloads follow a consistent structure:
+
+```typescript lib/webhook/schemas.ts
+export const webhookPayloadSchema = z.object({
+  id: z.string().describe("Unique identifier for the event."),
+  event: z
+    .enum(WEBHOOK_TRIGGERS)
+    .describe("The type of event that triggered the webhook."),
+  createdAt: z
+    .string()
+    .describe("The date and time when the event was created in UTC."),
+  data: z.any().describe("The data associated with the event."),
+});
+```
+
+### Event-Specific Schemas
+
+<Tabs>
+  <Tab title="link.clicked">
+    ```json
+    {
+      "id": "evt_qcR4fYZ8KrJfVDnGkxmtQAd",
+      "event": "link.clicked",
+      "createdAt": "2025-02-03T09:35:57.926Z",
+      "data": {
+        "click": {
+          "id": "yNrYm0F6r1KMnq6N",
+          "timestamp": "2025-02-03T09:35:57.926Z",
+          "url": "https://github.com/dubinc/dub",
+          "country": "US",
+          "city": "San Jose",
+          "region": "CA",
+          "continent": "NA",
+          "device": "Desktop",
+          "browser": "Chrome",
+          "os": "Mac OS",
+          "referer": "(direct)",
+          "refererUrl": "(direct)",
+          "qr": false,
+          "ip": "52.234.41.119"
+        },
+        "link": {
+          "id": "cm0lcuvtz000xcutmqw4a7wi3",
+          "domain": "dub.sh",
+          "key": "track-test",
+          "url": "https://github.com/dubinc/dub",
+          "trackConversion": true,
+          "partnerId": "pn_cm0lcuvtz000xcutmqw4a7wi3",
+          "programId": "prog_CYCu7IMAapjkRpTnr8F1azjN",
+          "shortLink": "https://dub.sh/track-test",
+          "qrCode": "https://api.dub.co/qr?url=https://dub.sh/track-test?qr=1",
+          "utm_source": null,
+          "utm_medium": null,
+          "utm_campaign": null,
+          "createdAt": "2024-09-02T18:49:56.136Z",
+          "updatedAt": "2025-01-13T22:46:22.152Z"
+        }
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="lead.created">
+    ```json
+    {
+      "id": "evt_8KfYqZvJcRdGkxmtQAd",
+      "event": "lead.created",
+      "createdAt": "2025-01-14T04:49:23.385Z",
+      "data": {
+        "eventName": "Signup",
+        "customer": {
+          "id": "cus_Ql3PvCTbPXBpp6vn7x5oHb5G",
+          "externalId": "cus_BH6tDUWc9n0Y2pf55tVbk1hc",
+          "name": "Tiny Beige Badger",
+          "email": "tiny.beige.badger@example.com",
+          "avatar": "https://api.dub.co/og/avatar/cus_BH6tDUWc9n0Y2pf55tVbk1hc",
+          "createdAt": "2025-01-14T04:49:23.385Z"
+        },
+        "click": {
+          "id": "GWGrkftJdYlZD2mq",
+          "timestamp": "2025-02-03T09:35:57.926Z",
+          "url": "https://github.com/dubinc/dub",
+          "country": "US",
+          "city": "San Jose",
+          "device": "Desktop",
+          "browser": "Chrome",
+          "os": "Mac OS",
+          "referer": "(direct)",
+          "ip": "185.211.32.242"
+        },
+        "link": {
+          "id": "cm0lcuvtz000xcutmqw4a7wi3",
+          "domain": "dub.sh",
+          "key": "track-test",
+          "url": "https://github.com/dubinc/dub",
+          "partnerId": "pn_cm0lcuvtz000xcutmqw4a7wi3",
+          "programId": "prog_CYCu7IMAapjkRpTnr8F1azjN",
+          "shortLink": "https://dub.sh/track-test"
+        },
+        "partner": {
+          "id": "pn_cm0lcuvtz000xcutmqw4a7wi3",
+          "email": "partner@example.com"
+        },
+        "metadata": null
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="sale.created">
+    ```json
+    {
+      "id": "evt_RfYqZvJcRdGkxmtQAd",
+      "event": "sale.created",
+      "createdAt": "2024-10-12T04:55:36.007Z",
+      "data": {
+        "eventName": "Subscription",
+        "customer": {
+          "id": "cm25onzuv0001s1bbxchrc0ae",
+          "externalId": "cus_jTrfVKYN3Buc3F80JoqBiY0g",
+          "name": "Rural Red Goldfish",
+          "email": "rural.red.goldfish@example.com",
+          "avatar": "https://api.dub.co/og/avatar/cus_jTrfVKYN3Buc3F80JoqBiY0g",
+          "createdAt": "2024-10-12T04:55:36.007Z"
+        },
+        "click": {
+          "id": "GWGrkftJdYlZD2mq",
+          "timestamp": "2025-02-03T09:35:57.926Z",
+          "country": "US",
+          "city": "San Jose",
+          "device": "Desktop",
+          "browser": "Chrome",
+          "ip": "185.211.32.242"
+        },
+        "link": {
+          "id": "cm0lcuvtz000xcutmqw4a7wi3",
+          "domain": "dub.sh",
+          "key": "track-test",
+          "url": "https://github.com/dubinc/dub",
+          "shortLink": "https://dub.sh/track-test"
+        },
+        "sale": {
+          "amount": 100,
+          "currency": "usd",
+          "paymentProcessor": "stripe",
+          "invoiceId": "INV_AUTi534JCiBUVdYmevCSYQ9G"
+        },
+        "partner": {
+          "id": "pn_cm0lcuvtz000xcutmqw4a7wi3",
+          "email": "partner@example.com"
+        },
+        "metadata": null
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="partner.enrolled">
+    ```json
+    {
+      "id": "evt_ZvJcRdGkxmtQAdRfYq",
+      "event": "partner.enrolled",
+      "createdAt": "2025-02-03T10:15:30.000Z",
+      "data": {
+        "id": "pn_abc123",
+        "email": "partner@example.com",
+        "name": "John Doe",
+        "image": "https://avatar.example.com/johndoe.png",
+        "programId": "prog_xyz789",
+        "status": "approved",
+        "links": [
+          {
+            "id": "link_123",
+            "domain": "dub.sh",
+            "key": "partner-abc",
+            "url": "https://example.com?ref=partner-abc",
+            "shortLink": "https://dub.sh/partner-abc"
+          }
+        ],
+        "createdAt": "2025-02-03T10:15:30.000Z"
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="commission.created">
+    ```json
+    {
+      "id": "evt_commission_abc123",
+      "event": "commission.created",
+      "createdAt": "2025-02-03T10:30:00.000Z",
+      "data": {
+        "id": "com_abc123",
+        "partnerId": "pn_abc123",
+        "amount": 1500,
+        "currency": "usd",
+        "status": "pending",
+        "saleId": "sale_xyz789",
+        "createdAt": "2025-02-03T10:30:00.000Z"
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Creating a Webhook
+
+### Via API
+
+Create a webhook using the Dub API:
+
+```typescript
+const webhook = await dub.webhooks.create({
+  name: "Production Webhook",
+  url: "https://api.yourapp.com/webhooks/dub",
+  triggers: ["lead.created", "sale.created"],
+  secret: "whsec_your_secret_key_here", // Optional: Use your own secret
+});
+```
+
+### Via Dashboard
+
+<Steps>
+  <Step title="Navigate to Webhooks">
+    Go to your workspace settings and click on the "Webhooks" tab.
+  </Step>
+  
+  <Step title="Create Webhook">
+    Click "Create Webhook" and enter your endpoint URL.
+  </Step>
+  
+  <Step title="Select Triggers">
+    Choose which events should trigger the webhook.
+  </Step>
+  
+  <Step title="Configure Secret">
+    Optionally provide your own signing secret, or let Dub generate one.
+  </Step>
+  
+  <Step title="Save and Test">
+    Save the webhook and use the test feature to verify it's working.
+  </Step>
+</Steps>
+
+## Webhook Security
+
+### Signature Verification
+
+All webhook requests include an HMAC-SHA256 signature in the `X-Dub-Signature` header. Always verify this signature to ensure requests are from Dub:
+
+```typescript lib/webhook/signature.ts
+export const createWebhookSignature = async (secret: string, body: any) => {
+  const keyData = new TextEncoder().encode(secret);
+  const messageData = new TextEncoder().encode(JSON.stringify(body));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+
+  const signature = await crypto.subtle.sign("HMAC", cryptoKey, messageData);
+  const signatureArray = Array.from(new Uint8Array(signature));
+  const hexSignature = signatureArray
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+
+  return hexSignature;
+};
+```
+
+### Verifying Signatures
+
+Implement signature verification in your webhook handler:
+
+```typescript
+import { createHmac } from "crypto";
+
+export async function POST(req: Request) {
+  const signature = req.headers.get("X-Dub-Signature");
+  const body = await req.text();
+  
+  // Get your webhook secret from environment variables
+  const secret = process.env.DUB_WEBHOOK_SECRET;
+  
+  // Calculate the expected signature
+  const expectedSignature = createHmac("sha256", secret)
+    .update(body)
+    .digest("hex");
+  
+  // Compare signatures
+  if (signature !== expectedSignature) {
+    return new Response("Invalid signature", { status: 401 });
+  }
+  
+  // Process the webhook
+  const payload = JSON.parse(body);
+  // ... handle the event
+  
+  return new Response("OK", { status: 200 });
+}
+```
+
+<Note>
+**Important**: Always verify webhook signatures in production. This prevents unauthorized requests from triggering actions in your system.
+</Note>
+
+## Webhook Delivery
+
+### Retry Policy
+
+Dub uses QStash for reliable webhook delivery with automatic retries:
+
+- Webhooks are retried up to 3 times with exponential backoff
+- If all retries fail, the webhook is marked as failed
+- You can view failed deliveries in the webhook event log
+
+### Timeout
+
+Webhook endpoints must respond within 30 seconds. If your endpoint takes longer:
+
+1. Return a `200 OK` response immediately
+2. Process the event asynchronously in the background
+3. Use a queue system for long-running operations
+
+### Failure Notifications
+
+Dub monitors webhook health and sends notifications when failures occur:
+
+```typescript lib/webhook/constants.ts
+export const WEBHOOK_FAILURE_NOTIFY_THRESHOLDS = [5, 10, 15] as const;
+export const WEBHOOK_FAILURE_DISABLE_THRESHOLD = 20 as const;
+```
+
+- You'll receive email notifications after 5, 10, and 15 consecutive failures
+- After 20 consecutive failures, the webhook is automatically disabled
+
+## Implementation Examples
+
+### Next.js Route Handler
+
+```typescript app/api/webhooks/dub/route.ts
+import { webhookPayloadSchema } from "@dub/api";
+import { createHmac } from "crypto";
+import { NextResponse } from "next/server";
+
+export async function POST(req: Request) {
+  try {
+    // Verify signature
+    const signature = req.headers.get("X-Dub-Signature");
+    const body = await req.text();
+    
+    const expectedSignature = createHmac("sha256", process.env.DUB_WEBHOOK_SECRET!)
+      .update(body)
+      .digest("hex");
+    
+    if (signature !== expectedSignature) {
+      return NextResponse.json(
+        { error: "Invalid signature" },
+        { status: 401 }
+      );
+    }
+    
+    // Parse and validate payload
+    const payload = webhookPayloadSchema.parse(JSON.parse(body));
+    
+    // Handle different event types
+    switch (payload.event) {
+      case "lead.created":
+        await handleLeadCreated(payload.data);
+        break;
+      case "sale.created":
+        await handleSaleCreated(payload.data);
+        break;
+      case "partner.enrolled":
+        await handlePartnerEnrolled(payload.data);
+        break;
+      default:
+        console.log(`Unhandled event: ${payload.event}`);
+    }
+    
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("Webhook error:", error);
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleLeadCreated(data: any) {
+  // Send to CRM
+  await fetch("https://your-crm.com/api/leads", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: data.customer.email,
+      name: data.customer.name,
+      source: data.link.shortLink,
+      metadata: {
+        click_id: data.click.id,
+        country: data.click.country,
+        device: data.click.device,
+      },
+    }),
+  });
+}
+
+async function handleSaleCreated(data: any) {
+  // Record revenue in analytics
+  await fetch("https://your-analytics.com/api/revenue", {
+    method: "POST",
+    body: JSON.stringify({
+      customer_id: data.customer.externalId,
+      amount: data.sale.amount,
+      currency: data.sale.currency,
+      attributed_to: data.link.shortLink,
+    }),
+  });
+}
+
+async function handlePartnerEnrolled(data: any) {
+  // Send welcome email to partner
+  await sendEmail({
+    to: data.email,
+    subject: "Welcome to our Partner Program!",
+    body: `Your unique link: ${data.links[0].shortLink}`,
+  });
+}
+```
+
+### Express.js Handler
+
+```typescript
+import express from "express";
+import { createHmac } from "crypto";
+
+const app = express();
+
+app.post("/webhooks/dub", express.raw({ type: "application/json" }), async (req, res) => {
+  const signature = req.headers["x-dub-signature"];
+  const body = req.body.toString();
+  
+  // Verify signature
+  const expectedSignature = createHmac("sha256", process.env.DUB_WEBHOOK_SECRET)
+    .update(body)
+    .digest("hex");
+  
+  if (signature !== expectedSignature) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+  
+  const payload = JSON.parse(body);
+  
+  // Process event
+  if (payload.event === "sale.created") {
+    await processSale(payload.data);
+  }
+  
+  res.json({ received: true });
+});
+```
+
+## Link-Level Webhooks
+
+For high-traffic links, you can attach webhooks directly to specific links to receive click events:
+
+```typescript
+const webhook = await dub.webhooks.create({
+  name: "Campaign Click Tracker",
+  url: "https://api.yourapp.com/webhooks/clicks",
+  triggers: ["link.clicked"],
+  linkIds: ["link_abc123", "link_xyz789"],
+});
+```
+
+<Note>
+Link-level webhooks are cached for performance. Click events on these links will trigger the webhook in real-time.
+</Note>
+
+## Testing Webhooks
+
+### Using the Dashboard
+
+1. Navigate to your webhook in the dashboard
+2. Click "Send Test Event"
+3. Select the event type to test
+4. View the response and delivery status
+
+### Local Development
+
+Use a tool like ngrok to expose your local server:
+
+```bash
+ngrok http 3000
+```
+
+Then create a webhook with your ngrok URL:
+
+```typescript
+const webhook = await dub.webhooks.create({
+  url: "https://abc123.ngrok.io/api/webhooks/dub",
+  triggers: ["lead.created"],
+});
+```
+
+## Best Practices
+
+### Idempotency
+
+Webhooks may be delivered more than once. Use the event `id` to ensure idempotent processing:
+
+```typescript
+const processedEvents = new Set();
+
+if (processedEvents.has(payload.id)) {
+  return NextResponse.json({ received: true }); // Already processed
+}
+
+processedEvents.add(payload.id);
+// Process event...
+```
+
+### Async Processing
+
+Respond quickly and process events asynchronously:
+
+```typescript
+export async function POST(req: Request) {
+  const payload = await req.json();
+  
+  // Queue for background processing
+  await queue.add("webhook-event", payload);
+  
+  // Respond immediately
+  return NextResponse.json({ received: true });
+}
+```
+
+### Error Handling
+
+Log errors but still return a success response to prevent retries:
+
+```typescript
+try {
+  await processEvent(payload);
+} catch (error) {
+  // Log error for investigation
+  console.error("Failed to process webhook:", error);
+  // Still return success to prevent retries
+}
+
+return NextResponse.json({ received: true });
+```
+
+### Monitor Webhook Health
+
+Regularly check your webhook logs to identify issues:
+
+1. Failed deliveries
+2. Slow response times
+3. Validation errors
+
+## Troubleshooting
+
+### Webhooks Not Received
+
+<Steps>
+  <Step title="Check Endpoint URL">
+    Verify your endpoint URL is publicly accessible and returns 200 OK.
+  </Step>
+  
+  <Step title="Review Event Logs">
+    Check the webhook event log in your Dub dashboard for delivery errors.
+  </Step>
+  
+  <Step title="Verify Triggers">
+    Ensure the webhook is configured for the events you expect to receive.
+  </Step>
+  
+  <Step title="Test Signature Verification">
+    Temporarily disable signature verification to rule out authentication issues.
+  </Step>
+</Steps>
+
+### Signature Verification Failed
+
+- Ensure you're using the exact secret from your webhook settings
+- Verify you're signing the raw request body (not parsed JSON)
+- Check that your HMAC implementation matches Dub's algorithm
+
+### High Failure Rate
+
+- Ensure your endpoint responds within 30 seconds
+- Check for errors in your webhook handler code
+- Verify your server isn't being rate-limited or blocked
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    View the full API documentation
+  </Card>
+  <Card title="Analytics Integrations" icon="chart-line" href="/integrations/analytics-platforms">
+    Send events to analytics platforms
+  </Card>
+  <Card title="Conversion Tracking" icon="bullseye" href="/features/conversion-tracking">
+    Learn about tracking leads and sales
+  </Card>
+  <Card title="Affiliate Programs" icon="users" href="/features/affiliate-programs">
+    Set up affiliate and referral programs
+  </Card>
+</CardGroup>

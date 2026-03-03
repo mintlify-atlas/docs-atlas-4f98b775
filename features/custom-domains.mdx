@@ -1,0 +1,463 @@
+---
+title: Custom Domains
+description: Use your own branded domain for short links to build trust and strengthen your brand identity.
+---
+
+## Overview
+
+Custom domains allow you to use your own branded domain (e.g., `go.yourcompany.com`) instead of Dub's default domains for your short links. This builds trust, strengthens brand recognition, and provides complete control over your link infrastructure.
+
+## Why Use Custom Domains?
+
+<CardGroup cols={2}>
+  <Card title="Brand Recognition" icon="badge">
+    Use your own domain to reinforce your brand with every link you share
+  </Card>
+  
+  <Card title="Trust & Credibility" icon="shield-check">
+    Branded links are more trustworthy and have higher click-through rates
+  </Card>
+  
+  <Card title="Professional Appearance" icon="briefcase">
+    Show professionalism with consistent branding across all touchpoints
+  </Card>
+  
+  <Card title="Complete Control" icon="sliders">
+    Own your link infrastructure and avoid dependency on third-party domains
+  </Card>
+</CardGroup>
+
+## Adding a Custom Domain
+
+<Steps>
+  <Step title="Navigate to Domains">
+    Go to Settings → Domains in your workspace dashboard.
+  </Step>
+  
+  <Step title="Click Add Domain">
+    Click the "Add Domain" button to open the domain configuration modal.
+  </Step>
+  
+  <Step title="Enter Your Domain">
+    Enter your domain or subdomain (e.g., `go.yourcompany.com`).
+  </Step>
+  
+  <Step title="Configure DNS">
+    Add the required DNS records to your domain provider.
+  </Step>
+  
+  <Step title="Verify Domain">
+    Wait for DNS propagation and click "Verify" to confirm ownership.
+  </Step>
+</Steps>
+
+## DNS Configuration
+
+### For Subdomains (Recommended)
+
+If you're using a subdomain like `go.yourcompany.com`, add a CNAME record:
+
+```dns
+Type: CNAME
+Name: go
+Value: cname.dub.co
+TTL: 3600 (or your provider's default)
+```
+
+### For Apex Domains
+
+If you're using an apex domain like `yourshortdomain.com`, add an A record:
+
+```dns
+Type: A
+Name: @
+Value: 76.76.21.21
+TTL: 3600 (or your provider's default)
+```
+
+<Warning>
+Apex domains cannot use CNAMEs due to DNS specifications. Use A records or consider using a subdomain instead.
+</Warning>
+
+## Domain Verification
+
+After adding DNS records:
+
+1. DNS propagation can take 5-72 hours (usually much faster)
+2. Check verification status in the Domains settings
+3. Dub automatically checks for verification every few minutes
+4. You'll receive an email once verification is complete
+
+<Tabs>
+  <Tab title="Dashboard">
+    The domain card will show:
+    - ✅ Green checkmark when verified
+    - ⏳ Yellow pending icon while waiting
+    - ❌ Red X if verification fails
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    // Check domain status via API
+    const domain = await fetch('/api/domains/go.yourcompany.com', {
+      headers: { Authorization: 'Bearer YOUR_API_KEY' }
+    });
+    
+    const { verified } = await domain.json();
+    console.log('Verified:', verified);
+    ```
+  </Tab>
+</Tabs>
+
+## Domain Configuration
+
+### Primary Domain
+
+Set a domain as your workspace's primary domain:
+
+<Steps>
+  <Step title="Open Domain Settings">
+    Click on the domain card in Settings → Domains.
+  </Step>
+  
+  <Step title="Set as Primary">
+    Toggle "Set as Primary Domain" to make it the default for new links.
+  </Step>
+</Steps>
+
+```typescript
+// API Example: Set primary domain
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'PATCH',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ primary: true })
+});
+```
+
+<Info>
+The primary domain is automatically selected when creating new links in the dashboard.
+</Info>
+
+### Domain Placeholder
+
+Set a custom placeholder for random key generation:
+
+```typescript
+// Example: Set custom placeholder
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'PATCH',
+  body: JSON.stringify({
+    placeholder: 'https://go.yourcompany.com/your-link'
+  })
+});
+```
+
+### Expired URL Redirect
+
+Set a default URL for expired links on this domain:
+
+```typescript
+// Example: Set expired URL
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'PATCH',
+  body: JSON.stringify({
+    expiredUrl: 'https://yourcompany.com/link-expired'
+  })
+});
+```
+
+When a link expires without a link-specific expired URL, users are redirected here.
+
+### Not Found URL Redirect
+
+Set a default URL for non-existent links on this domain:
+
+```typescript
+// Example: Set 404 redirect
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'PATCH',
+  body: JSON.stringify({
+    notFoundUrl: 'https://yourcompany.com'
+  })
+});
+```
+
+<Note>
+Without a notFoundUrl, visitors to non-existent links see a 404 page.
+</Note>
+
+### Domain Logo
+
+Upload a logo to customize QR codes for this domain:
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open domain settings
+    2. Click "Upload Logo"
+    3. Select an image file (PNG, JPG, SVG)
+    4. Logo will appear in QR codes for links using this domain
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    // Upload logo via API
+    await fetch('/api/domains/go.yourcompany.com', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        logo: 'https://yourcompany.com/logo.png'
+      })
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Link Retention
+
+Configure automatic link cleanup for the domain:
+
+```typescript
+// Example: Delete links older than 30 days
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'PATCH',
+  body: JSON.stringify({
+    linkRetentionDays: 30
+  })
+});
+
+// Disable automatic deletion (default)
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'PATCH',
+  body: JSON.stringify({
+    linkRetentionDays: null
+  })
+});
+```
+
+<Warning>
+Links older than the retention period are automatically deleted. This action is permanent and cannot be undone.
+</Warning>
+
+Individual links can opt out of retention cleanup:
+
+```typescript
+// Disable cleanup for specific link
+await fetch('/api/links/link_123', {
+  method: 'PATCH',
+  body: JSON.stringify({
+    linkRetentionCleanupDisabledAt: new Date().toISOString()
+  })
+});
+```
+
+## Registering Domains
+
+Register new domains directly through Dub:
+
+<Steps>
+  <Step title="Search for Domain">
+    In Domains settings, click "Register Domain" and search for availability.
+  </Step>
+  
+  <Step title="Complete Purchase">
+    Review pricing and complete the registration.
+  </Step>
+  
+  <Step title="Auto-Configuration">
+    DNS is automatically configured - no manual setup required.
+  </Step>
+  
+  <Step title="Start Using">
+    Domain is immediately ready for creating short links.
+  </Step>
+</Steps>
+
+### Auto-Renewal
+
+Registered domains auto-renew annually by default:
+
+```typescript
+// Disable auto-renewal
+await fetch('/api/domains/yourshortdomain.com/renewal', {
+  method: 'PATCH',
+  body: JSON.stringify({
+    autoRenewal: false
+  })
+});
+```
+
+<Info>
+You'll receive email reminders before renewal. Default renewal fee is $12/year.
+</Info>
+
+## Deep Links & Universal Links
+
+### iOS Universal Links
+
+Configure Apple App Site Association for deep linking:
+
+```typescript
+// Example: Set iOS deep linking configuration
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'PATCH',
+  body: JSON.stringify({
+    appleAppSiteAssociation: {
+      applinks: {
+        apps: [],
+        details: [{
+          appID: 'TEAM_ID.com.yourcompany.app',
+          paths: ['*']
+        }]
+      }
+    }
+  })
+});
+```
+
+This serves the required `/.well-known/apple-app-site-association` file.
+
+### Android App Links
+
+Configure Android asset links:
+
+```typescript
+// Example: Set Android deep linking configuration
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'PATCH',
+  body: JSON.stringify({
+    assetLinks: [{
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: {
+        namespace: 'android_app',
+        package_name: 'com.yourcompany.app',
+        sha256_cert_fingerprints: ['XX:XX:XX:...']
+      }
+    }]
+  })
+});
+```
+
+This serves the required `/.well-known/assetlinks.json` file.
+
+## Domain Transfer
+
+Transfer domains between workspaces:
+
+<Steps>
+  <Step title="Initiate Transfer">
+    Open domain settings and click "Transfer Domain".
+  </Step>
+  
+  <Step title="Select Workspace">
+    Choose the destination workspace.
+  </Step>
+  
+  <Step title="Confirm Transfer">
+    Confirm the transfer - all links remain intact.
+  </Step>
+</Steps>
+
+```typescript
+// API Example: Transfer domain
+await fetch('/api/domains/go.yourcompany.com/transfer', {
+  method: 'POST',
+  body: JSON.stringify({
+    newWorkspaceId: 'ws_new123'
+  })
+});
+```
+
+<Warning>
+Only workspace owners can transfer domains. All links and analytics move with the domain.
+</Warning>
+
+## Archiving Domains
+
+Archive domains you no longer actively use:
+
+```typescript
+// Archive a domain
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'PATCH',
+  body: JSON.stringify({ archived: true })
+});
+
+// Unarchive
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'PATCH',
+  body: JSON.stringify({ archived: false })
+});
+```
+
+<Info>
+Archived domains and their links remain functional. They're just hidden from the main domains list.
+</Info>
+
+## Deleting Domains
+
+Permanently delete a domain:
+
+<Steps>
+  <Step title="Archive First">
+    Consider archiving before deleting.
+  </Step>
+  
+  <Step title="Backup Links">
+    Export or migrate links to another domain if needed.
+  </Step>
+  
+  <Step title="Delete Domain">
+    Click "Delete" in domain settings and confirm.
+  </Step>
+</Steps>
+
+```typescript
+// API Example: Delete domain
+await fetch('/api/domains/go.yourcompany.com', {
+  method: 'DELETE'
+});
+```
+
+<Warning>
+Deleting a domain does not delete its links. Links will show as having an invalid domain.
+</Warning>
+
+## Domain Limits
+
+Domain limits by plan:
+
+- **Free**: Use default Dub domains only
+- **Pro**: 3 custom domains
+- **Business**: 10 custom domains
+- **Enterprise**: Unlimited custom domains
+
+## API Reference
+
+For detailed API documentation:
+
+- [Create Domain](/api-reference/domains/create)
+- [Update Domain](/api-reference/domains/update)
+- [Delete Domain](/api-reference/domains/delete)
+- [List Domains](/api-reference/domains/list)
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Subdomains" icon="sitemap">
+    Prefer subdomains like `go.yourcompany.com` over apex domains for easier DNS management
+  </Card>
+  
+  <Card title="Keep It Short" icon="text">
+    Choose short, memorable domains for better link readability
+  </Card>
+  
+  <Card title="Set 404 Redirects" icon="arrow-right">
+    Configure notFoundUrl to provide a better experience for broken links
+  </Card>
+  
+  <Card title="Enable HTTPS" icon="lock">
+    Dub automatically provisions SSL certificates for all custom domains
+  </Card>
+</CardGroup>

@@ -1,0 +1,316 @@
+---
+title: "Self-Hosting Guide"
+description: "Complete guide to self-hosting Dub on your own infrastructure"
+---
+
+## Overview
+
+Dub is an open-source link attribution platform that can be self-hosted for greater control over your data and infrastructure. This guide will walk you through the complete process of setting up Dub on your own servers.
+
+<Note>
+  Self-hosting Dub requires technical knowledge of deployment, database management, and infrastructure. Ensure you have the necessary expertise or support before proceeding.
+</Note>
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- Node.js v23.11.0 or higher
+- pnpm 9.15.9 or higher
+- MySQL 8.0 database
+- Domain names for your Dub instance
+- Access to required third-party services (see below)
+
+## Required Services
+
+Dub requires several third-party services to function properly:
+
+### Analytics & Monitoring
+- **Tinybird** - Required for analytics and click tracking
+- **Upstash Redis** - Required for caching and rate limiting
+- **Upstash QStash** - Required for background jobs and queues
+
+### Infrastructure
+- **MySQL Database** - PlanetScale or compatible MySQL 8.0+ database
+- **Vercel Domains API** - Required for custom domain management
+
+### Email & Authentication
+- **Resend** or **SMTP** - For email delivery and authentication
+- **NextAuth** - Built-in authentication system
+
+### Optional Services
+- **Stripe** - For subscriptions and payments
+- **Google OAuth** - For Google login
+- **GitHub OAuth** - For GitHub login
+- **Unsplash** - For custom link preview images
+- **S3-compatible storage** - For storing images and assets
+- **Axiom** - For logging and monitoring
+
+## Installation Steps
+
+<Steps>
+  <Step title="Clone the Repository">
+    Clone the Dub repository from GitHub:
+
+    ```bash
+    git clone https://github.com/dubinc/dub.git
+    cd dub
+    ```
+  </Step>
+
+  <Step title="Install Dependencies">
+    Install all required dependencies using pnpm:
+
+    ```bash
+    pnpm install
+    ```
+
+    <Warning>
+      Make sure you're using the correct versions:
+      - Node.js: v23.11.0
+      - pnpm: 9.15.9
+    </Warning>
+  </Step>
+
+  <Step title="Configure Environment Variables">
+    Copy the example environment file and configure your variables:
+
+    ```bash
+    cd apps/web
+    cp .env.example .env
+    ```
+
+    See the [Environment Variables](/self-hosting/environment-variables) page for detailed configuration.
+  </Step>
+
+  <Step title="Set Up Database">
+    Configure your MySQL database and run Prisma migrations:
+
+    ```bash
+    pnpm prisma:generate
+    pnpm prisma:push
+    ```
+
+    See [Database Setup](/self-hosting/database-setup) for detailed instructions.
+  </Step>
+
+  <Step title="Build the Application">
+    Build the Next.js application:
+
+    ```bash
+    pnpm build
+    ```
+
+    This will compile the application and prepare it for production.
+  </Step>
+
+  <Step title="Start the Server">
+    Start the production server:
+
+    ```bash
+    pnpm start
+    ```
+
+    By default, the application will be available at `http://localhost:3000`.
+  </Step>
+</Steps>
+
+## Local Development Setup
+
+For local development with Docker:
+
+<Steps>
+  <Step title="Start Local Services">
+    Use Docker Compose to start MySQL, PlanetScale proxy, and MailHog:
+
+    ```bash
+    cd apps/web
+    docker compose up -d
+    ```
+
+    This starts:
+    - MySQL 8.0 on port 3306
+    - PlanetScale HTTP proxy on port 3900
+    - MailHog SMTP server on port 1025 (UI on port 8025)
+  </Step>
+
+  <Step title="Configure Local Environment">
+    Update your `.env` file with local development settings:
+
+    ```bash
+    DATABASE_URL="mysql://root:@localhost:3306/planetscale"
+    PLANETSCALE_DATABASE_URL="http://root:unused@localhost:3900/planetscale"
+    SMTP_HOST=localhost
+    SMTP_PORT=1025
+    NEXTAUTH_URL=http://localhost:8888
+    ```
+  </Step>
+
+  <Step title="Run Development Server">
+    Start the Next.js development server:
+
+    ```bash
+    pnpm dev
+    ```
+
+    The application will be available at `http://localhost:8888`.
+  </Step>
+
+  <Step title="Seed Development Data (Optional)">
+    Seed the database with development data:
+
+    ```bash
+    pnpm run script dev/seed
+    ```
+
+    To reset the database before seeding:
+
+    ```bash
+    pnpm run script dev/seed --truncate
+    ```
+  </Step>
+</Steps>
+
+## Domain Configuration
+
+Dub requires proper domain configuration:
+
+### Required Domains
+
+1. **Main Application Domain** - Where your Dub instance will be hosted
+2. **Short Link Domain** - For your shortened links (e.g., `dub.sh`)
+
+Configure these in your environment variables:
+
+```bash
+NEXT_PUBLIC_APP_NAME=Dub
+NEXT_PUBLIC_APP_DOMAIN=yourdomain.com
+NEXT_PUBLIC_APP_SHORT_DOMAIN=yourdomain.link
+```
+
+### DNS Configuration
+
+Point your domains to your server:
+
+- **A Record**: Point to your server's IP address
+- **CNAME Record**: For subdomains, point to your main domain
+
+## Post-Installation
+
+After installation:
+
+<Steps>
+  <Step title="Create Admin Account">
+    Create your first admin user by signing up through the web interface.
+  </Step>
+
+  <Step title="Configure Workspace">
+    Set up your first workspace and configure your settings.
+  </Step>
+
+  <Step title="Test Link Creation">
+    Create a test short link to verify everything is working.
+  </Step>
+
+  <Step title="Set Up Monitoring">
+    Configure monitoring and alerting for your instance.
+  </Step>
+</Steps>
+
+## Production Considerations
+
+### Security
+
+- Use HTTPS for all domains
+- Set strong `NEXTAUTH_SECRET` (32+ characters)
+- Enable rate limiting with Edge Config
+- Regularly update dependencies
+- Implement proper backup procedures
+
+### Performance
+
+- Use a CDN for static assets
+- Configure Redis for optimal caching
+- Set up horizontal scaling if needed
+- Monitor database performance
+- Enable analytics aggregation cron jobs
+
+### Cron Jobs
+
+Dub requires several cron jobs for proper operation. When deploying outside Vercel, you'll need to set these up manually:
+
+- **Domain Verification** - Hourly (`0 * * * *`)
+- **Email Domain Verification** - Hourly (`0 * * * *`)
+- **Update Workspace Clicks** - Every minute (`* * * * *`)
+- **Update Partner Stats** - Every 2 minutes (`*/2 * * * *`)
+- **Usage Reporting** - Daily at noon (`0 12 * * *`)
+- **Aggregate Clicks** - Daily at midnight (`0 0 * * *`)
+
+See [Deployment Guide](/self-hosting/deployment) for platform-specific cron configuration.
+
+## Common Issues
+
+### Database Connection Issues
+
+```bash
+# Verify database connectivity
+pnpm prisma:studio
+```
+
+If you see "The table does not exist", run:
+
+```bash
+pnpm prisma:push
+```
+
+### Build Failures
+
+Delete generated files and rebuild:
+
+```bash
+find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
+find . -name '.next' -type d -prune -exec rm -rf '{}' +
+find . -name '.turbo' -type d -prune -exec rm -rf '{}' +
+pnpm install
+pnpm build
+```
+
+### Missing Environment Variables
+
+The application will fail to start if required environment variables are missing. Check the logs and ensure all required variables are set.
+
+## Updating Your Instance
+
+To update your self-hosted Dub instance:
+
+```bash
+# Pull latest changes
+git pull origin main
+
+# Install new dependencies
+pnpm install
+
+# Update database schema
+pnpm prisma:generate
+pnpm prisma:push
+
+# Rebuild application
+pnpm build
+
+# Restart server
+pnpm start
+```
+
+## Support & Resources
+
+- [GitHub Repository](https://github.com/dubinc/dub)
+- [Environment Variables Reference](/self-hosting/environment-variables)
+- [Database Setup Guide](/self-hosting/database-setup)
+- [Deployment Guide](/self-hosting/deployment)
+- [Open an Issue](https://github.com/dubinc/dub/issues)
+
+## License Considerations
+
+Dub is licensed under AGPLv3 for the core platform (99% of the codebase). The Enterprise Edition features in `/ee` require a commercial license for production use by larger organizations.
+
+For more information, see the [LICENSE](https://github.com/dubinc/dub/blob/main/LICENSE.md) file in the repository.

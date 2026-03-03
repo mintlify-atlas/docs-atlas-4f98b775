@@ -1,0 +1,258 @@
+---
+title: Managing Workspaces
+description: Learn how to create and manage workspaces in Dub for organizing your links and team collaboration
+---
+
+Workspaces are the foundation of your Dub organization. They allow you to organize links, manage team members, and track analytics across your link attribution campaigns.
+
+## What is a Workspace?
+
+A workspace in Dub represents your organization or project. Each workspace has:
+
+- **Unique slug**: Used for your workspace URL and partner programs
+- **Custom domains**: Connect your own domains for branded short links
+- **Team members**: Collaborate with different permission levels
+- **Usage limits**: Based on your plan (links, clicks, conversions)
+- **Analytics**: Track performance across all your links
+
+<Info>
+Workspaces are also referred to as "projects" in the Dub codebase and API.
+</Info>
+
+## Creating a Workspace
+
+<Steps>
+  <Step title="Navigate to Workspace Creation">
+    From your dashboard, click the workspace selector and choose "Create workspace" or visit the workspaces page.
+  </Step>
+
+  <Step title="Enter Workspace Details">
+    Fill in the required information:
+
+    <Tabs>
+      <Tab title="Workspace Name">
+        **Name**: The display name of your company or product (e.g., "Acme, Inc.")
+        
+        This is how your workspace will appear throughout the Dub interface.
+      </Tab>
+
+      <Tab title="Workspace Slug">
+        **Slug**: A unique identifier for your workspace (e.g., "acme")
+        
+        - Must be at least 3 characters
+        - Maximum 48 characters
+        - Only alphanumeric characters and hyphens allowed
+        - Cannot use reserved slugs
+        
+        Your workspace will be available at `app.dub.co/acme`
+      </Tab>
+
+      <Tab title="Workspace Logo">
+        **Logo** (Optional): Upload a workspace logo
+        
+        - Recommended size: 160x160px
+        - Max file size: 2MB
+        - Formats: JPG, PNG, or WEBP
+        
+        Dub will automatically attempt to fetch your company logo based on your email domain.
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Configure Conversion Tracking (Optional)">
+    Enable automatic conversion tracking for all new links created in this workspace.
+
+    <Note>
+    You can always enable conversion tracking for individual links later, but enabling it workspace-wide ensures all new links are tracked by default.
+    </Note>
+  </Step>
+
+  <Step title="Create Workspace">
+    Click "Create workspace" to finalize. You'll be automatically redirected to your new workspace.
+  </Step>
+</Steps>
+
+## Workspace Settings
+
+After creating your workspace, you can configure various settings:
+
+### General Settings
+
+- **Name and Logo**: Update your workspace branding
+- **Slug**: Cannot be changed after creation
+- **Billing Cycle**: View when your billing cycle starts
+- **Plan Tier**: See your current plan and limits
+
+### Usage and Limits
+
+Each workspace has usage limits based on your plan:
+
+```typescript
+{
+  usage: number,              // Total events tracked
+  usageLimit: number,         // Max events per billing cycle
+  linksUsage: number,         // Current links created
+  linksLimit: number,         // Max links allowed
+  payoutsUsage: number,       // Partner payouts processed (cents)
+  payoutsLimit: number,       // Max payouts per cycle (cents)
+  domainsLimit: number,       // Max custom domains
+  tagsLimit: number,          // Max tags for organization
+  foldersLimit: number,       // Max folders
+  usersLimit: number,         // Max team members
+  aiUsage: number,            // AI features used
+  aiLimit: number,            // AI usage limit
+}
+```
+
+<Warning>
+When you exceed usage limits, certain features may be restricted. Upgrade your plan to increase limits.
+</Warning>
+
+### Team Management
+
+Invite team members with different permission levels:
+
+<Accordion title="Workspace Roles">
+  - **Owner**: Full access to all workspace settings, billing, and resources
+  - **Member**: Can create and manage links, view analytics
+  - **Viewer**: Read-only access to links and analytics
+  - **Billing**: Manage billing and subscription settings only
+</Accordion>
+
+### Domain Management
+
+<Steps>
+  <Step title="Add Custom Domain">
+    Navigate to Settings > Domains and click "Add Domain"
+  </Step>
+
+  <Step title="Configure DNS">
+    Add the required DNS records to your domain provider:
+    - A record pointing to Dub's servers
+    - TXT record for domain verification
+  </Step>
+
+  <Step title="Verify Domain">
+    Once DNS records propagate, click "Verify" to activate your domain
+  </Step>
+
+  <Step title="Set as Primary">
+    Mark your domain as primary to use it as the default for new links
+  </Step>
+</Steps>
+
+### Conversion Tracking Settings
+
+Enable conversion tracking features for your workspace:
+
+- **Conversion Enabled**: Automatically enable tracking for new links
+- **Publishable Key**: Client-side key for tracking scripts
+- **Allowed Hostnames**: Whitelist domains for client-side tracking
+
+```javascript
+// Example: Using the publishable key
+import { Analytics } from '@dub/analytics/react';
+
+<Analytics 
+  publishableKey="pk_live_xxxxx" 
+  allowedHostnames={['yourdomain.com']}
+/>
+```
+
+## Workspace API Integration
+
+### Creating a Workspace via API
+
+```typescript
+const response = await fetch('/api/workspaces', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    name: 'Acme, Inc.',
+    slug: 'acme',
+    logo: 'https://example.com/logo.png', // Optional
+    conversionEnabled: true, // Optional
+  }),
+});
+
+const { id: workspaceId } = await response.json();
+```
+
+### Workspace Schema
+
+The workspace object returned from the API:
+
+```typescript
+{
+  id: string,                    // Unique workspace ID
+  name: string,                  // Workspace name
+  slug: string,                  // Unique workspace slug
+  logo: string | null,           // Logo URL
+  plan: 'free' | 'pro' | 'business' | 'enterprise',
+  planTier: number,              // Current plan tier
+  totalLinks: number,            // Total links in workspace
+  usage: number,                 // Current usage
+  conversionEnabled: boolean,    // Auto-enable tracking
+  dotLinkClaimed: boolean,       // Free .link domain claimed
+  createdAt: Date,               // Creation timestamp
+  users: [
+    {
+      role: 'owner' | 'member' | 'viewer' | 'billing',
+      defaultFolderId: string | null,
+    }
+  ],
+  domains: [
+    {
+      slug: string,              // Domain name
+      primary: boolean,          // Is primary domain
+      verified: boolean,         // Domain verified
+    }
+  ],
+}
+```
+
+## Best Practices
+
+<Accordion title="Organize with Folders and Tags">
+  Use folders to organize links by campaign or product, and tags to add metadata for filtering and analytics.
+</Accordion>
+
+<Accordion title="Set Usage Alerts">
+  Monitor your workspace usage regularly to avoid hitting limits during critical campaigns.
+</Accordion>
+
+<Accordion title="Use Role-Based Access">
+  Assign appropriate roles to team members to maintain security and prevent accidental changes.
+</Accordion>
+
+<Accordion title="Enable Conversion Tracking">
+  Turn on workspace-wide conversion tracking to automatically track all links without manual configuration.
+</Accordion>
+
+## Switching Between Workspaces
+
+You can be a member of multiple workspaces:
+
+1. Click the workspace selector in the top navigation
+2. Choose the workspace you want to switch to
+3. All links, analytics, and settings will update to reflect the selected workspace
+
+<Info>
+Each workspace is completely isolated with its own links, domains, and analytics.
+</Info>
+
+## Deleting a Workspace
+
+<Warning>
+Deleting a workspace is permanent and cannot be undone. All links, analytics data, and settings will be permanently deleted.
+</Warning>
+
+To delete a workspace:
+
+1. Navigate to Settings > General
+2. Scroll to the "Danger Zone"
+3. Click "Delete Workspace"
+4. Confirm by typing the workspace slug
+5. All data will be permanently removed

@@ -1,0 +1,79 @@
+---
+title: SDK Overview
+description: Access Dub's link management and analytics platform through our official SDKs and client-side tools
+---
+
+Dub provides comprehensive SDKs and libraries to integrate link management, tracking, and analytics into your applications. Choose the SDK that best fits your tech stack.
+
+## Server-Side SDKs
+
+Use our server-side SDKs to create and manage short links, track conversions, and interact with the Dub API from your backend applications.
+
+<CardGroup cols={2}>
+  <Card title="TypeScript" icon="js" href="/sdks/typescript">
+    Official TypeScript/JavaScript SDK for Node.js applications
+  </Card>
+  <Card title="Python" icon="python" href="/sdks/python">
+    Official Python SDK for Python applications
+  </Card>
+  <Card title="Go" icon="golang" href="/sdks/go">
+    Official Go SDK for Go applications
+  </Card>
+  <Card title="Ruby" icon="gem" href="/sdks/ruby">
+    Official Ruby SDK for Ruby applications
+  </Card>
+</CardGroup>
+
+## Client-Side SDKs
+
+Track user interactions and conversions on your website with our client-side analytics tools.
+
+<CardGroup cols={2}>
+  <Card title="Analytics Script" icon="chart-line" href="/sdks/client-side/analytics-script">
+    Lightweight JavaScript snippet for tracking clicks and conversions
+  </Card>
+  <Card title="React" icon="react" href="/sdks/client-side/react">
+    React components for analytics and embeds
+  </Card>
+  <Card title="Next.js" icon="N" href="/sdks/client-side/nextjs">
+    Next.js integration with App Router support
+  </Card>
+</CardGroup>
+
+## Command Line Interface
+
+Manage your Dub links directly from your terminal.
+
+<Card title="Dub CLI" icon="terminal" href="/sdks/cli/overview">
+  Command-line tool for creating and managing short links
+</Card>
+
+## Features Across SDKs
+
+All server-side SDKs provide consistent functionality:
+
+- **Link Management** - Create, update, delete, and retrieve short links
+- **Domain Management** - Manage custom domains for your workspace
+- **Analytics** - Track clicks, conversions, and attribution data
+- **Customer Tracking** - Associate conversions with customer profiles
+- **Conversion Events** - Track leads and sales for attribution
+
+## Authentication
+
+All SDKs use API key authentication. Get your API key from the [Dub Dashboard](https://app.dub.co/settings/tokens).
+
+```bash
+Authorization: Bearer dub_xxxxxx
+```
+
+## Base URL
+
+All API requests are made to:
+
+```bash
+https://api.dub.co
+```
+
+## Getting Started
+
+Choose your SDK and follow the installation and usage guides to get started with Dub in your application.

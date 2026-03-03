@@ -1,0 +1,293 @@
+---
+title: Retrieve a list of links
+description: Retrieve a paginated list of links for the authenticated workspace.
+---
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+```bash
+Authorization: Bearer <token>
+```
+
+## Endpoint
+
+<ParamField path="method" type="string" required>
+  GET
+</ParamField>
+
+<ParamField path="endpoint" type="string" required>
+  /links
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="domain" type="string">
+  The domain to filter the links by. E.g. `ac.me`. If not provided, all links for the workspace will be returned.
+</ParamField>
+
+<ParamField query="tagIds" type="string">
+  The tag IDs to filter the links by. Can be a comma-separated list.
+</ParamField>
+
+<ParamField query="tagNames" type="string">
+  The unique name of the tags assigned to the short link (case insensitive). Can be a comma-separated list.
+</ParamField>
+
+<ParamField query="folderId" type="string">
+  The folder ID to filter the links by.
+</ParamField>
+
+<ParamField query="search" type="string">
+  The search term to filter the links by. The search term will be matched against the short link slug and the destination url.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  The user ID to filter the links by.
+</ParamField>
+
+<ParamField query="tenantId" type="string">
+  The ID of the tenant that created the link inside your system. If set, will only return links for the specified tenant.
+</ParamField>
+
+<ParamField query="showArchived" type="boolean" default="false">
+  Whether to include archived links in the response.
+</ParamField>
+
+<ParamField query="sortBy" type="string" default="createdAt">
+  The field to sort the links by. Options: `createdAt`, `clicks`, `saleAmount`, `lastClicked`.
+</ParamField>
+
+<ParamField query="sortOrder" type="string" default="desc">
+  The sort order. Options: `asc`, `desc`.
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  The page number for pagination.
+</ParamField>
+
+<ParamField query="pageSize" type="number" default="100">
+  The number of links to return per page. Maximum is 100.
+</ParamField>
+
+## Response
+
+Returns an array of link objects.
+
+<ResponseField name="[].id" type="string">
+  The unique ID of the short link.
+</ResponseField>
+
+<ResponseField name="[].domain" type="string">
+  The domain of the short link.
+</ResponseField>
+
+<ResponseField name="[].key" type="string">
+  The short link slug.
+</ResponseField>
+
+<ResponseField name="[].url" type="string">
+  The destination URL of the short link.
+</ResponseField>
+
+<ResponseField name="[].externalId" type="string">
+  The ID of the link in your database.
+</ResponseField>
+
+<ResponseField name="[].trackConversion" type="boolean">
+  Whether to track conversions for the short link.
+</ResponseField>
+
+<ResponseField name="[].archived" type="boolean">
+  Whether the short link is archived.
+</ResponseField>
+
+<ResponseField name="[].expiresAt" type="string">
+  The date and time when the short link will expire in ISO-8601 format.
+</ResponseField>
+
+<ResponseField name="[].password" type="string">
+  The password required to access the destination URL of the short link.
+</ResponseField>
+
+<ResponseField name="[].proxy" type="boolean">
+  Whether the short link uses Custom Link Previews feature.
+</ResponseField>
+
+<ResponseField name="[].title" type="string">
+  The title of the short link.
+</ResponseField>
+
+<ResponseField name="[].description" type="string">
+  The description of the short link.
+</ResponseField>
+
+<ResponseField name="[].image" type="string">
+  The image of the short link.
+</ResponseField>
+
+<ResponseField name="[].rewrite" type="boolean">
+  Whether the short link uses link cloaking.
+</ResponseField>
+
+<ResponseField name="[].ios" type="string">
+  The iOS destination URL for the short link.
+</ResponseField>
+
+<ResponseField name="[].android" type="string">
+  The Android destination URL for the short link.
+</ResponseField>
+
+<ResponseField name="[].geo" type="object">
+  Geo targeting information for the short link.
+</ResponseField>
+
+<ResponseField name="[].tags" type="array">
+  The tags assigned to the short link.
+</ResponseField>
+
+<ResponseField name="[].comments" type="string">
+  The comments for the short link.
+</ResponseField>
+
+<ResponseField name="[].shortLink" type="string">
+  The full URL of the short link, including the https protocol.
+</ResponseField>
+
+<ResponseField name="[].qrCode" type="string">
+  The full URL of the QR code for the short link.
+</ResponseField>
+
+<ResponseField name="[].utm_source" type="string">
+  The UTM source of the short link.
+</ResponseField>
+
+<ResponseField name="[].utm_medium" type="string">
+  The UTM medium of the short link.
+</ResponseField>
+
+<ResponseField name="[].utm_campaign" type="string">
+  The UTM campaign of the short link.
+</ResponseField>
+
+<ResponseField name="[].workspaceId" type="string">
+  The workspace ID of the short link.
+</ResponseField>
+
+<ResponseField name="[].clicks" type="number">
+  The number of clicks on the short link.
+</ResponseField>
+
+<ResponseField name="[].leads" type="number">
+  The number of leads the short link has generated.
+</ResponseField>
+
+<ResponseField name="[].conversions" type="number">
+  The number of leads that converted to paying customers.
+</ResponseField>
+
+<ResponseField name="[].sales" type="number">
+  The total number of sales generated by the short link.
+</ResponseField>
+
+<ResponseField name="[].saleAmount" type="number">
+  The total dollar value of sales (in cents) generated by the short link.
+</ResponseField>
+
+<ResponseField name="[].lastClicked" type="string">
+  The date and time when the short link was last clicked.
+</ResponseField>
+
+<ResponseField name="[].createdAt" type="string">
+  The date and time when the short link was created.
+</ResponseField>
+
+<ResponseField name="[].updatedAt" type="string">
+  The date and time when the short link was last updated.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.dub.co/links?domain=dub.sh&page=1&pageSize=10" \
+  -H "Authorization: Bearer <token>"
+```
+
+```javascript Node.js
+const response = await fetch('https://api.dub.co/links?domain=dub.sh&page=1&pageSize=10', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer <token>'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get(
+  'https://api.dub.co/links',
+  headers={'Authorization': 'Bearer <token>'},
+  params={
+    'domain': 'dub.sh',
+    'page': 1,
+    'pageSize': 10
+  }
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+[
+  {
+    "id": "clux0rgak00011...",
+    "domain": "dub.sh",
+    "key": "try",
+    "url": "https://google.com",
+    "archived": false,
+    "expiresAt": null,
+    "expiredUrl": null,
+    "password": null,
+    "proxy": false,
+    "title": null,
+    "description": null,
+    "image": null,
+    "rewrite": false,
+    "doIndex": false,
+    "ios": null,
+    "android": null,
+    "geo": null,
+    "publicStats": false,
+    "tags": [],
+    "folderId": null,
+    "comments": null,
+    "shortLink": "https://dub.sh/try",
+    "qrCode": "https://api.dub.co/qr?url=https://dub.sh/try",
+    "utm_source": null,
+    "utm_medium": null,
+    "utm_campaign": null,
+    "utm_term": null,
+    "utm_content": null,
+    "userId": "user_123",
+    "workspaceId": "ws_123",
+    "clicks": 0,
+    "leads": 0,
+    "conversions": 0,
+    "sales": 0,
+    "saleAmount": 0,
+    "lastClicked": null,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+]
+```
+
+</ResponseExample>

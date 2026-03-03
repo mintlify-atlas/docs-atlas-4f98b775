@@ -1,0 +1,87 @@
+---
+title: Bulk delete links
+description: Bulk delete up to 100 links for the authenticated workspace.
+---
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+```bash
+Authorization: Bearer <token>
+```
+
+## Endpoint
+
+<ParamField path="method" type="string" required>
+  DELETE
+</ParamField>
+
+<ParamField path="endpoint" type="string" required>
+  /links/bulk
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="linkIds" type="string" required>
+  Comma-separated list of link IDs to delete. Maximum of 100 IDs. Non-existing IDs will be ignored.
+  
+  You may use either `linkId` or `externalId` prefixed with `ext_`.
+  
+  **Example:** `clux0rgak00011...,clux0rgak00022...` or `ext_123456,ext_789012`
+</ParamField>
+
+## Response
+
+<ResponseField name="deletedCount" type="number">
+  The number of links deleted.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X DELETE "https://api.dub.co/links/bulk?linkIds=clux0rgak00011...,clux0rgak00022..." \
+  -H "Authorization: Bearer <token>"
+```
+
+```bash cURL (using externalIds)
+curl -X DELETE "https://api.dub.co/links/bulk?linkIds=ext_123456,ext_789012" \
+  -H "Authorization: Bearer <token>"
+```
+
+```javascript Node.js
+const linkIds = ['clux0rgak00011...', 'clux0rgak00022...'];
+const response = await fetch(`https://api.dub.co/links/bulk?linkIds=${linkIds.join(',')}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': 'Bearer <token>'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+link_ids = ['clux0rgak00011...', 'clux0rgak00022...']
+response = requests.delete(
+  'https://api.dub.co/links/bulk',
+  headers={'Authorization': 'Bearer <token>'},
+  params={'linkIds': ','.join(link_ids)}
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "deletedCount": 2
+}
+```
+
+</ResponseExample>

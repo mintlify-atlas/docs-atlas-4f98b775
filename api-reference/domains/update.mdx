@@ -1,0 +1,199 @@
+---
+title: "Update a domain"
+description: "Update a domain for the authenticated workspace"
+---
+
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.dub.co/domains/acme.com \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "archived": false,
+    "placeholder": "https://dub.co/help/article/updated"
+  }'
+```
+
+```typescript TypeScript
+import { Dub } from 'dub';
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+const domain = await dub.domains.update('acme.com', {
+  archived: false,
+  placeholder: 'https://dub.co/help/article/updated',
+});
+```
+
+```python Python
+from dub import Dub
+
+dub = Dub(token=os.environ['DUB_API_KEY'])
+
+domain = dub.domains.update(
+  'acme.com',
+  archived=False,
+  placeholder='https://dub.co/help/article/updated',
+)
+```
+</CodeGroup>
+
+## Path Parameters
+
+<ParamField path="slug" type="string" required>
+  The domain name to update.
+  
+  Example: `acme.com`
+</ParamField>
+
+## Request Body
+
+All fields are optional. Only include the fields you want to update.
+
+<ParamField body="slug" type="string">
+  Name of the domain.
+  
+  Example: `acme.com`
+</ParamField>
+
+<ParamField body="expiredUrl" type="string">
+  Redirect users to a specific URL when any link under this domain has expired.
+  
+  Example: `https://acme.com/expired`
+</ParamField>
+
+<ParamField body="notFoundUrl" type="string">
+  Redirect users to a specific URL when a link under this domain doesn't exist.
+  
+  Example: `https://acme.com/not-found`
+</ParamField>
+
+<ParamField body="placeholder" type="string">
+  Provide context to your teammates in the link creation modal by showing them an example of a link to be shortened.
+  
+  Example: `https://dub.co/help/article/dub-links`
+  
+  Maximum length: 100 characters
+</ParamField>
+
+<ParamField body="archived" type="boolean">
+  Whether to archive this domain. `false` will unarchive a previously archived domain.
+</ParamField>
+
+<ParamField body="logo" type="string">
+  The logo of the domain (uploaded image URL).
+</ParamField>
+
+<ParamField body="assetLinks" type="string">
+  assetLinks.json configuration file (for deep link support on Android).
+</ParamField>
+
+<ParamField body="appleAppSiteAssociation" type="string">
+  apple-app-site-association configuration file (for deep link support on iOS).
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  The unique identifier of the domain.
+</ResponseField>
+
+<ResponseField name="slug" type="string">
+  The domain name.
+  
+  Example: `acme.com`
+</ResponseField>
+
+<ResponseField name="verified" type="boolean">
+  Whether the domain is verified.
+</ResponseField>
+
+<ResponseField name="primary" type="boolean">
+  Whether the domain is the primary domain for the workspace.
+</ResponseField>
+
+<ResponseField name="archived" type="boolean">
+  Whether the domain is archived.
+</ResponseField>
+
+<ResponseField name="placeholder" type="string | null">
+  Provide context to your teammates in the link creation modal by showing them an example of a link to be shortened.
+</ResponseField>
+
+<ResponseField name="expiredUrl" type="string | null">
+  The URL to redirect to when a link under this domain has expired.
+</ResponseField>
+
+<ResponseField name="notFoundUrl" type="string | null">
+  The URL to redirect to when a link under this domain doesn't exist.
+</ResponseField>
+
+<ResponseField name="logo" type="string | null">
+  The logo of the domain.
+</ResponseField>
+
+<ResponseField name="assetLinks" type="string | null">
+  assetLinks.json configuration file (for deep link support on Android).
+</ResponseField>
+
+<ResponseField name="appleAppSiteAssociation" type="string | null">
+  apple-app-site-association configuration file (for deep link support on iOS).
+</ResponseField>
+
+<ResponseField name="createdAt" type="date">
+  The date the domain was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="date">
+  The date the domain was last updated.
+</ResponseField>
+
+<ResponseField name="registeredDomain" type="object | null">
+  The registered domain record.
+  
+  <ResponseField name="id" type="string">
+    The ID of the registered domain record.
+  </ResponseField>
+  
+  <ResponseField name="autoRenewalDisabledAt" type="date | null">
+    The date the domain auto-renew is disabled.
+  </ResponseField>
+  
+  <ResponseField name="createdAt" type="date">
+    The date the domain was created.
+  </ResponseField>
+  
+  <ResponseField name="expiresAt" type="date">
+    The date the domain expires.
+  </ResponseField>
+  
+  <ResponseField name="renewalFee" type="number">
+    The fee to renew the domain.
+  </ResponseField>
+</ResponseField>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "dom_abc123",
+  "slug": "acme.com",
+  "verified": true,
+  "primary": true,
+  "archived": false,
+  "placeholder": "https://dub.co/help/article/updated",
+  "expiredUrl": "https://acme.com/expired",
+  "notFoundUrl": "https://acme.com/not-found",
+  "logo": null,
+  "assetLinks": null,
+  "appleAppSiteAssociation": null,
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-15T12:30:00.000Z",
+  "registeredDomain": null
+}
+```
+</ResponseExample>

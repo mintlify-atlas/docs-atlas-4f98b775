@@ -1,0 +1,600 @@
+---
+title: Affiliate Programs
+description: Create and manage affiliate programs with customizable commissions, partner management, and automated payouts.
+---
+
+## Overview
+
+Dub's affiliate program feature allows you to create and manage partner programs with commission-based rewards, automated tracking, and built-in payout management. Perfect for SaaS companies, e-commerce, and any business looking to scale through partnerships.
+
+<Info>
+Affiliate programs are available on Business and Enterprise plans.
+</Info>
+
+## Creating a Program
+
+<Steps>
+  <Step title="Navigate to Programs">
+    Go to your workspace and click "Programs" in the sidebar.
+  </Step>
+  
+  <Step title="Create New Program">
+    Click "Create Program" and fill in the basic information.
+  </Step>
+  
+  <Step title="Configure Settings">
+    Set up commission structures, payment terms, and program rules.
+  </Step>
+  
+  <Step title="Launch Program">
+    Activate the program and start inviting partners.
+  </Step>
+</Steps>
+
+## Program Configuration
+
+### Basic Information
+
+```typescript
+// Program schema properties
+const program = {
+  name: 'Acme SaaS Affiliate Program',
+  slug: 'acme-affiliates',
+  domain: 'go.acme.com', // Optional custom domain
+  url: 'https://acme.com',
+  logo: 'https://acme.com/logo.png',
+  description: 'Earn 30% recurring commissions promoting Acme'
+};
+```
+
+### Commission Structure
+
+Set up reward events for your program:
+
+<CardGroup cols={3}>
+  <Card title="Click Rewards" icon="mouse-pointer">
+    Pay partners per click (CPC model)
+  </Card>
+  
+  <Card title="Lead Rewards" icon="user-plus">
+    Reward for qualified signups (CPL model)
+  </Card>
+  
+  <Card title="Sale Rewards" icon="dollar-sign">
+    Commission on sales (CPS/revenue share)
+  </Card>
+</CardGroup>
+
+```typescript
+// Example: Configure sale-based commission
+const program = {
+  name: 'My Program',
+  primaryRewardEvent: 'sale', // 'click', 'lead', or 'sale'
+  // Reward structures configured separately
+};
+```
+
+### Payout Configuration
+
+Choose your payout mode:
+
+<Tabs>
+  <Tab title="Internal">
+    **All payouts handled by Dub**
+    
+    - Automatic commission tracking
+    - Built-in payout processing
+    - Direct deposits to partners
+    - Dub handles all payment logistics
+    
+    ```typescript
+    const program = {
+      payoutMode: 'internal',
+      minPayoutAmount: 5000 // $50 minimum in cents
+    };
+    ```
+  </Tab>
+  
+  <Tab title="Hybrid">
+    **Flexible payout handling**
+    
+    - Partners with payouts enabled → Dub processes
+    - Other partners → Manual/external processing
+    - Best for transition periods
+    
+    ```typescript
+    const program = {
+      payoutMode: 'hybrid',
+      minPayoutAmount: 10000 // $100 minimum
+    };
+    ```
+  </Tab>
+  
+  <Tab title="External">
+    **All payouts external**
+    
+    - You handle all payments
+    - Dub provides tracking and reporting
+    - Full control over payment timing and methods
+    
+    ```typescript
+    const program = {
+      payoutMode: 'external',
+      minPayoutAmount: 0
+    };
+    ```
+  </Tab>
+</Tabs>
+
+## Partner Management
+
+### Enrollment Statuses
+
+Partners can have different statuses in your program:
+
+<CardGroup cols={2}>
+  <Card title="Pending" icon="clock">
+    Applications awaiting approval
+  </Card>
+  
+  <Card title="Approved" icon="check">
+    Active partners in the program
+  </Card>
+  
+  <Card title="Invited" icon="envelope">
+    Partners you've invited who haven't accepted
+  </Card>
+  
+  <Card title="Rejected" icon="times">
+    Applications you've declined
+  </Card>
+  
+  <Card title="Declined" icon="hand">
+    Invites the partner declined
+  </Card>
+  
+  <Card title="Deactivated" icon="pause">
+    Temporarily inactive partners
+  </Card>
+  
+  <Card title="Banned" icon="ban">
+    Partners permanently removed for policy violations
+  </Card>
+  
+  <Card title="Archived" icon="archive">
+    Historical partners no longer in program
+  </Card>
+</CardGroup>
+
+### Partner Statistics
+
+Each partner enrollment tracks comprehensive metrics:
+
+```typescript
+// Example partner enrollment data
+const enrollment = {
+  partnerId: 'pn_123',
+  programId: 'prg_456',
+  status: 'approved',
+  
+  // Performance metrics
+  totalClicks: 1250,
+  totalLeads: 85,
+  totalConversions: 42,
+  totalSales: 45,
+  totalSaleAmount: 450000, // $4,500 in cents
+  totalCommissions: 135000, // $1,350 in cents (30%)
+  
+  // Calculated metrics
+  netRevenue: 315000, // Revenue minus commissions
+  earningsPerClick: 360, // Revenue per click in cents
+  averageLifetimeValue: 10714, // $107.14 per customer
+  clickToLeadRate: 0.068, // 6.8%
+  clickToConversionRate: 0.0336, // 3.36%
+  leadToConversionRate: 0.494, // 49.4%
+  returnOnAdSpend: 3.33 // $3.33 revenue per $1 commission
+};
+```
+
+### Partner Groups
+
+Organize partners into groups with different settings:
+
+```typescript
+// Example: Create partner groups
+const groups = [
+  {
+    name: 'VIP Partners',
+    programId: 'prg_123',
+    // Higher commission rates for VIPs
+  },
+  {
+    name: 'Content Creators',
+    programId: 'prg_123',
+    // Specialized resources for creators
+  },
+  {
+    name: 'Enterprise Partners',
+    programId: 'prg_123',
+    // Custom terms for large partners
+  }
+];
+```
+
+## Reward Configuration
+
+### Creating Rewards
+
+Set up commission structures for different events:
+
+```typescript
+// Example: Percentage-based commission on sales
+const saleReward = {
+  programId: 'prg_123',
+  event: 'sale',
+  type: 'percentage',
+  amount: 30, // 30% commission
+  label: '30% Revenue Share',
+  description: 'Earn 30% on all sales you refer'
+};
+
+// Example: Fixed amount per lead
+const leadReward = {
+  programId: 'prg_123',
+  event: 'lead',
+  type: 'fixed',
+  amount: 500, // $5 per lead in cents
+  label: '$5 per Lead',
+  description: 'Earn $5 for every qualified signup'
+};
+
+// Example: Pay per click
+const clickReward = {
+  programId: 'prg_123',
+  event: 'click',
+  type: 'fixed',
+  amount: 10, // $0.10 per click
+  label: '$0.10 per Click',
+  description: 'Earn $0.10 for every click'
+};
+```
+
+### Tiered Commissions
+
+Create multiple reward tiers:
+
+```typescript
+// Example: Different tiers for different partner groups
+const rewards = [
+  {
+    label: 'Standard - 20%',
+    amount: 20, // Default tier
+  },
+  {
+    label: 'VIP - 30%',
+    amount: 30, // Higher tier for top performers
+  },
+  {
+    label: 'Enterprise - 40%',
+    amount: 40, // Premium tier
+  }
+];
+```
+
+## Discount Codes
+
+### Program-Level Discounts
+
+Create discount codes for partners to promote:
+
+```typescript
+// Example: Program discount
+const programDiscount = {
+  programId: 'prg_123',
+  code: 'PARTNER20',
+  amount: 20, // 20% off
+  description: 'Partner exclusive discount'
+};
+```
+
+### Partner-Specific Codes
+
+Generate unique codes for each partner:
+
+```typescript
+// Example: Partner-specific discount
+const partnerCode = {
+  programId: 'prg_123',
+  partnerId: 'pn_456',
+  linkId: 'link_789',
+  code: 'JOHN20', // Unique to this partner
+  amount: 20
+};
+```
+
+<Info>
+Discount codes are automatically tracked and attributed to the correct partner.
+</Info>
+
+## Partner Links
+
+### Automatic Link Creation
+
+When a partner joins, Dub automatically creates their affiliate link:
+
+```typescript
+// Partner link structure
+const partnerLink = {
+  domain: 'go.acme.com',
+  key: 'partner-john', // Unique per partner
+  url: 'https://acme.com',
+  programId: 'prg_123',
+  partnerId: 'pn_456',
+  trackConversion: true // Always enabled for partner links
+};
+```
+
+### Custom Partner Links
+
+Partners can create additional links for specific campaigns:
+
+```typescript
+// Example: Campaign-specific partner link
+const campaignLink = {
+  domain: 'go.acme.com',
+  key: 'john-webinar',
+  url: 'https://acme.com/webinar',
+  programId: 'prg_123',
+  partnerId: 'pn_456',
+  tagNames: ['webinar', 'q1-2024']
+};
+```
+
+## Commission Tracking
+
+### Automatic Commission Calculation
+
+Commissions are automatically calculated and tracked:
+
+```typescript
+// When a sale occurs:
+1. Sale event recorded: $100
+2. Commission rate: 30%
+3. Commission calculated: $30
+4. Partner balance updated
+5. Commission record created
+
+const commission = {
+  programId: 'prg_123',
+  partnerId: 'pn_456',
+  amount: 3000, // $30 in cents
+  saleAmount: 10000, // $100 sale
+  type: 'sale',
+  status: 'pending'
+};
+```
+
+### Recurring Commissions
+
+Track first-time vs recurring revenue:
+
+```typescript
+// First purchase
+const firstSale = {
+  customerId: 'cus_123',
+  amount: 10000,
+  // Creates new commission
+};
+
+// Recurring purchase from same customer
+const recurringSale = {
+  customerId: 'cus_123',
+  amount: 10000,
+  saleType: 'recurring',
+  // Commission still tracked for partner
+};
+```
+
+## Payout Management
+
+### Automatic Payouts
+
+With internal payout mode, Dub handles payments:
+
+<Steps>
+  <Step title="Commissions Accumulate">
+    Partner earns commissions from sales.
+  </Step>
+  
+  <Step title="Minimum Threshold">
+    Balance reaches minimum payout amount.
+  </Step>
+  
+  <Step title="Payout Initiated">
+    Dub automatically creates payout.
+  </Step>
+  
+  <Step title="Partner Receives Payment">
+    Funds deposited to partner's account.
+  </Step>
+</Steps>
+
+### Manual Payouts
+
+For external payout mode:
+
+```typescript
+// Mark payouts as completed externally
+const payout = {
+  programId: 'prg_123',
+  partnerId: 'pn_456',
+  amount: 50000, // $500
+  status: 'completed',
+  paidAt: new Date().toISOString(),
+  method: 'bank_transfer',
+  externalId: 'TRANSFER_123'
+};
+```
+
+### Payout History
+
+Track all payouts:
+
+```typescript
+// Get partner payouts
+const payouts = await fetch(
+  '/api/programs/prg_123/payouts?partnerId=pn_456'
+);
+
+// Payout statuses:
+// - pending: Awaiting processing
+// - processing: Payment in progress
+// - completed: Successfully paid
+// - failed: Payment failed
+// - cancelled: Payout cancelled
+```
+
+## Partner Analytics
+
+### Performance Dashboard
+
+View partner performance metrics:
+
+```typescript
+// Get partner analytics
+const analytics = await fetch(
+  '/api/analytics?' +
+  'programId=prg_123&' +
+  'partnerId=pn_456&' +
+  'interval=30d'
+);
+
+// Track key metrics:
+// - Total clicks
+// - Conversion rate
+// - Revenue generated
+// - Commissions earned
+// - Average order value
+```
+
+### Leaderboards
+
+Rank partners by performance:
+
+```typescript
+// Top partners by revenue
+const topRevenue = await fetch(
+  '/api/programs/prg_123/partners?' +
+  'sortBy=totalSaleAmount&' +
+  'order=desc&' +
+  'limit=10'
+);
+
+// Top by conversions
+const topConversions = await fetch(
+  '/api/programs/prg_123/partners?' +
+  'sortBy=totalConversions&' +
+  'order=desc'
+);
+```
+
+## Fraud Prevention
+
+### Fraud Rules
+
+Set up automatic fraud detection:
+
+```typescript
+// Example fraud rules
+const fraudRules = [
+  {
+    type: 'duplicate_customer',
+    enabled: true,
+    action: 'flag' // or 'block'
+  },
+  {
+    type: 'invalid_traffic',
+    threshold: 0.8, // 80% invalid click rate
+    action: 'suspend_partner'
+  },
+  {
+    type: 'self_referral',
+    action: 'reject_commission'
+  }
+];
+```
+
+### Ban Reasons
+
+When banning partners, specify reason:
+
+- `tos_violation` - Terms of service violation
+- `inappropriate_content` - Inappropriate promotional content
+- `fake_traffic` - Generating fake clicks/traffic
+- `fraud` - Fraudulent activity
+- `spam` - Spamming
+- `brand_abuse` - Misrepresenting brand
+
+## Partner Network
+
+### Marketplace Listing
+
+List your program in Dub's partner marketplace:
+
+```typescript
+const program = {
+  addedToMarketplaceAt: new Date(),
+  featuredOnMarketplaceAt: new Date(), // Featured programs
+  marketplaceHeaderImage: 'https://acme.com/header.jpg',
+  marketplaceRanking: 1 // Display order
+};
+```
+
+### Discovery Features
+
+Help partners find your program:
+
+```typescript
+// Enable partner discovery
+const program = {
+  partnerNetworkEnabledAt: new Date(),
+  categories: ['saas', 'marketing', 'analytics'],
+  description: 'Full program description for partners'
+};
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Clear Terms" icon="file-contract">
+    Provide clear commission structures and payment terms upfront
+  </Card>
+  
+  <Card title="Regular Payouts" icon="calendar-check">
+    Set reasonable payout thresholds and pay on time
+  </Card>
+  
+  <Card title="Partner Support" icon="headset">
+    Provide resources, creatives, and support for partners
+  </Card>
+  
+  <Card title="Monitor Performance" icon="chart-line">
+    Regularly review partner performance and optimize
+  </Card>
+  
+  <Card title="Prevent Fraud" icon="shield-halved">
+    Implement fraud detection rules from the start
+  </Card>
+  
+  <Card title="Reward Top Performers" icon="trophy">
+    Create tiered rewards to incentivize high performers
+  </Card>
+</CardGroup>
+
+## API Reference
+
+For detailed API documentation on tracking conversions and managing customers:
+
+- [Track Lead Event](/api-reference/track/lead)
+- [Track Sale Event](/api-reference/track/sale)
+- [Manage Customers](/api-reference/customers/list)

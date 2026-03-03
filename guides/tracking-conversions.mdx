@@ -1,0 +1,568 @@
+---
+title: Tracking Conversions
+description: Set up conversion tracking to attribute leads and sales to your links using Dub's analytics and attribution platform
+---
+
+Dub's conversion tracking allows you to attribute leads and sales to your links, providing complete visibility into your link attribution funnel and ROI.
+
+## How Conversion Tracking Works
+
+Dub uses a cookie-based attribution system to track the complete user journey:
+
+<Steps>
+  <Step title="User Clicks Link">
+    When someone clicks your Dub link, Dub sets a `dub_id` cookie containing a unique click ID.
+  </Step>
+
+  <Step title="User Converts to Lead">
+    When the user signs up or completes a lead action, you send a lead event to Dub with the `dub_id` from the cookie.
+  </Step>
+
+  <Step title="User Makes Purchase">
+    When the user completes a purchase, you send a sale event to Dub, which associates it with the original click.
+  </Step>
+
+  <Step title="View Attribution">
+    Dub attributes the lead and sale to the original link, showing complete conversion funnel metrics.
+  </Step>
+</Steps>
+
+<Info>
+The `dub_id` cookie persists for 30 days by default, allowing attribution of conversions that occur within that window.
+</Info>
+
+## Setting Up Conversion Tracking
+
+### Step 1: Install the Analytics Script
+
+First, install the Dub analytics script to track clicks and set the `dub_id` cookie.
+
+<Tabs>
+  <Tab title="React/Next.js">
+    Install the `@dub/analytics` package:
+
+    ```bash
+    npm install @dub/analytics
+    ```
+
+    Add the Analytics component to your root layout:
+
+    ```jsx
+    import { Analytics } from '@dub/analytics/react';
+
+    export default function RootLayout({ children }) {
+      return (
+        <html lang="en">
+          <body>{children}</body>
+          <Analytics />
+        </html>
+      );
+    }
+    ```
+  </Tab>
+
+  <Tab title="HTML/JavaScript">
+    Add this script to your HTML `<head>`:
+
+    ```html
+    <script>
+      (function (c, n) {
+        c[n] =
+          c[n] ||
+          function () {
+            (c[n].q = c[n].q || []).push(arguments);
+          };
+        var methods = ["trackClick", "trackLead", "trackSale"];
+        for (var i = 0; i < methods.length; i++) {
+          (function (method) {
+            c[n][method] = function () {
+              var args = Array.prototype.slice.call(arguments);
+              args.unshift(method);
+              c[n].apply(null, args);
+            };
+          })(methods[i]);
+        }
+        var s = document.createElement("script");
+        s.defer = 1;
+        s.src = "https://www.dubcdn.com/analytics/script.js";
+        document.head.appendChild(s);
+      })(window, "dubAnalytics");
+    </script>
+    ```
+  </Tab>
+
+  <Tab title="Google Tag Manager">
+    Create a Custom HTML tag in GTM:
+
+    1. Navigate to Tags > New
+    2. Choose Custom HTML
+    3. Paste the Dub analytics script
+    4. Set trigger to "All Pages"
+    5. Save and publish
+
+    See the [Integration Guides](/guides/integration-guides) page for detailed steps.
+  </Tab>
+</Tabs>
+
+### Step 2: Track Lead Conversions
+
+When a user signs up or completes a lead action, send the lead event to Dub.
+
+<Tabs>
+  <Tab title="Server-Side (Recommended)">
+    Track leads server-side for better reliability:
+
+    ```typescript
+    import { Dub } from 'dub';
+    import { cookies } from 'next/headers';
+
+    const dub = new Dub({
+      token: process.env.DUB_API_KEY,
+    });
+
+    // In your signup handler
+    export async function handleSignup(user: User) {
+      const cookieStore = await cookies();
+      const dubId = cookieStore.get('dub_id')?.value;
+
+      if (dubId) {
+        // Track the lead event
+        await dub.track.lead({
+          clickId: dubId,
+          eventName: 'Sign Up',
+          customerExternalId: user.id,
+          customerName: user.name,
+          customerEmail: user.email,
+          customerAvatar: user.avatarUrl,
+        });
+
+        // Delete the cookie after tracking
+        cookieStore.set('dub_id', '', {
+          expires: new Date(0),
+        });
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Client-Side">
+    Track leads client-side using the analytics script:
+
+    ```javascript
+    // After successful signup
+    dubAnalytics.trackLead({
+      eventName: 'Sign Up',
+      customerExternalId: user.id,
+      customerName: user.name,
+      customerEmail: user.email,
+      customerAvatar: user.avatarUrl,
+    });
+    ```
+
+    <Warning>
+    Client-side tracking may be blocked by ad blockers. Server-side tracking is more reliable.
+    </Warning>
+  </Tab>
+
+  <Tab title="REST API">
+    ```javascript
+    const response = await fetch('https://api.dub.co/track/lead', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer dub_xxxxxx',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        clickId: 'rLnWe1uz9t282v7g',
+        eventName: 'Sign Up',
+        customerExternalId: 'user_123',
+        customerName: 'John Doe',
+        customerEmail: 'john@example.com',
+        customerAvatar: 'https://example.com/avatar.png',
+      }),
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Step 3: Track Sale Conversions
+
+When a customer makes a purchase, track the sale event.
+
+<Tabs>
+  <Tab title="Manual Tracking">
+    ```typescript
+    import { Dub } from 'dub';
+
+    const dub = new Dub({
+      token: process.env.DUB_API_KEY,
+    });
+
+    // After successful payment
+    await dub.track.sale({
+      customerExternalId: 'user_123',
+      amount: 5000, // Amount in cents ($50.00)
+      currency: 'usd',
+      paymentProcessor: 'stripe',
+      eventName: 'Purchase',
+      invoiceId: 'inv_123',
+    });
+    ```
+  </Tab>
+
+  <Tab title="Stripe Integration">
+    For Stripe Checkout, pass the customer ID in metadata:
+
+    ```typescript
+    import { stripe } from '@/lib/stripe';
+
+    const session = await stripe.checkout.sessions.create({
+      customer_email: user.email,
+      success_url: 'https://app.example.com/success',
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: 'subscription',
+      metadata: {
+        dubCustomerExternalId: user.id, // Link to your user ID
+      },
+    });
+    ```
+
+    Dub will automatically track the sale when the checkout completes.
+
+    <Info>
+    Requires Stripe webhook integration. See the [Integration Guides](/guides/integration-guides) page for more details.
+    </Info>
+  </Tab>
+
+  <Tab title="Client-Side">
+    ```javascript
+    // After successful purchase
+    dubAnalytics.trackSale({
+      customerExternalId: 'user_123',
+      amount: 5000, // Amount in cents
+      currency: 'usd',
+      paymentProcessor: 'stripe',
+      eventName: 'Purchase',
+      invoiceId: 'inv_123',
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Integration Examples
+
+### Clerk Authentication
+
+<Accordion title="Track signups with Clerk">
+  ```typescript
+  "use client";
+
+  import { trackLead } from "@/actions/track-lead";
+  import { useUser } from "@clerk/nextjs";
+  import { Analytics } from "@dub/analytics/react";
+  import { useEffect } from "react";
+
+  export function DubAnalytics() {
+    const { user } = useUser();
+
+    useEffect(() => {
+      if (!user || user.publicMetadata.dubClickId) return;
+
+      // Track the lead event if user hasn't been tracked yet
+      trackLead({
+        id: user.id,
+        name: user.fullName!,
+        email: user.primaryEmailAddress?.emailAddress,
+        avatar: user.imageUrl,
+      }).then(async (res) => {
+        if (res.ok) await user.reload();
+        else console.error(res.error);
+      });
+    }, [user]);
+
+    return <Analytics />;
+  }
+  ```
+
+  Server action:
+
+  ```typescript
+  "use server";
+
+  import { dub } from "@/lib/dub";
+  import { clerkClient } from "@clerk/nextjs/server";
+  import { cookies } from "next/headers";
+
+  export async function trackLead({ id, name, email, avatar }) {
+    try {
+      const cookieStore = await cookies();
+      const dubId = cookieStore.get("dub_id")?.value;
+
+      if (dubId) {
+        await dub.track.lead({
+          clickId: dubId,
+          eventName: "Sign Up",
+          customerExternalId: id,
+          customerName: name,
+          customerEmail: email,
+          customerAvatar: avatar,
+        });
+
+        cookieStore.set("dub_id", "", {
+          expires: new Date(0),
+        });
+      }
+
+      const clerk = await clerkClient();
+      await clerk.users.updateUser(id, {
+        publicMetadata: {
+          dubClickId: dubId || "n/a",
+        },
+      });
+
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  }
+  ```
+</Accordion>
+
+### Supabase Authentication
+
+<Accordion title="Track signups with Supabase">
+  ```typescript
+  // app/api/auth/callback/route.ts
+  import { dub } from "@/lib/dub";
+  import { createClient } from "@/lib/supabase/server";
+  import { cookies } from "next/headers";
+  import { NextResponse } from "next/server";
+
+  export async function GET(request: Request) {
+    const { searchParams, origin } = new URL(request.url);
+    const code = searchParams.get("code");
+    const next = searchParams.get("next") ?? "/";
+
+    if (code) {
+      const supabase = createClient(cookies());
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (!error) {
+        const { user } = data;
+        const dub_id = cookies().get("dub_id")?.value;
+        
+        // Check if user is new (created in last 10 minutes)
+        const isNewUser =
+          new Date(user.created_at) > new Date(Date.now() - 10 * 60 * 1000);
+
+        if (dub_id && isNewUser) {
+          await dub.track.lead({
+            clickId: dub_id,
+            eventName: "Sign Up",
+            customerExternalId: user.id,
+            customerName: user.user_metadata.name,
+            customerEmail: user.email,
+            customerAvatar: user.user_metadata.avatar_url,
+          });
+
+          cookies().delete("dub_id");
+        }
+
+        return NextResponse.redirect(`${origin}${next}`);
+      }
+    }
+
+    return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  }
+  ```
+</Accordion>
+
+### Shopify Store
+
+<Accordion title="Track purchases from Shopify">
+  1. Install the [Dub Shopify App](https://d.to/shopify/app)
+  2. Navigate to Online Store > Themes > Customize
+  3. Go to App embeds tab
+  4. Enable the Dub Analytics Script
+
+  Sales are automatically tracked when customers complete checkout through Shopify.
+</Accordion>
+
+## Conversion Metrics
+
+Once tracking is set up, view conversion metrics in your Dub dashboard:
+
+### Link-Level Metrics
+
+```typescript
+{
+  clicks: number,        // Total clicks on the link
+  leads: number,         // Users who converted to leads
+  conversions: number,   // Leads who made purchases
+  sales: number,         // Total number of sales
+  saleAmount: number,    // Total revenue in cents
+}
+```
+
+### Conversion Funnel
+
+<Steps>
+  <Step title="Clicks">
+    Total users who clicked your link
+  </Step>
+
+  <Step title="Leads">
+    Users who signed up or completed a lead action
+    
+    **Conversion Rate**: Leads / Clicks
+  </Step>
+
+  <Step title="Sales">
+    Leads who made a purchase
+    
+    **Lead-to-Sale Rate**: Sales / Leads
+  </Step>
+
+  <Step title="Revenue">
+    Total revenue from all sales
+    
+    **Average Order Value**: Revenue / Sales
+  </Step>
+</Steps>
+
+### Analytics Dashboard
+
+View detailed conversion analytics:
+
+- **Conversion timeline**: Leads and sales over time
+- **Top converting links**: Best performing links by conversion rate
+- **Customer details**: Name, email, avatar for each lead
+- **Revenue tracking**: Total revenue and AOV
+- **Attribution window**: When conversions occurred relative to click
+
+## Advanced Configuration
+
+### Custom Event Names
+
+<Accordion title="Track multiple lead types">
+  ```typescript
+  // Different lead events
+  await dub.track.lead({
+    clickId: dubId,
+    eventName: 'Trial Started',
+    customerExternalId: user.id,
+  });
+
+  await dub.track.lead({
+    clickId: dubId,
+    eventName: 'Waitlist Joined',
+    customerExternalId: user.id,
+  });
+
+  await dub.track.lead({
+    clickId: dubId,
+    eventName: 'Newsletter Subscribed',
+    customerExternalId: user.id,
+  });
+  ```
+
+  Filter analytics by event name to see performance by lead type.
+</Accordion>
+
+### Allowed Hostnames
+
+<Accordion title="Whitelist domains for client-side tracking">
+  For security, restrict which domains can track conversions:
+
+  ```typescript
+  // In workspace settings
+  {
+    allowedHostnames: ['yourdomain.com', 'app.yourdomain.com']
+  }
+  ```
+
+  Only pages on these domains can use the client-side analytics script.
+</Accordion>
+
+### Publishable Key
+
+<Accordion title="Use publishable key for client-side tracking">
+  ```jsx
+  import { Analytics } from '@dub/analytics/react';
+
+  <Analytics 
+    publishableKey="pk_live_xxxxx"
+    allowedHostnames={['yourdomain.com']}
+  />
+  ```
+
+  Get your publishable key from workspace settings > Conversion Tracking.
+</Accordion>
+
+## Best Practices
+
+<Accordion title="Use Server-Side Tracking">
+  Server-side lead and sale tracking is more reliable than client-side because it:
+  - Cannot be blocked by ad blockers
+  - Executes in a controlled environment
+  - Provides accurate attribution
+</Accordion>
+
+<Accordion title="Delete Cookie After Tracking">
+  Always delete the `dub_id` cookie after successfully tracking a lead to prevent duplicate tracking:
+
+  ```typescript
+  cookieStore.set('dub_id', '', { expires: new Date(0) });
+  ```
+</Accordion>
+
+<Accordion title="Track Unique Customer IDs">
+  Use your internal user IDs as `customerExternalId` to:
+  - Prevent duplicate leads
+  - Associate multiple events with the same customer
+  - Link sales back to the original lead
+</Accordion>
+
+<Accordion title="Enable Conversion Tracking Per Link">
+  Only enable conversion tracking for links where you need attribution:
+
+  ```typescript
+  {
+    trackConversion: true  // Enable for marketing links
+  }
+  ```
+
+  This reduces noise and makes analytics more meaningful.
+</Accordion>
+
+<Accordion title="Test in Development">
+  Before deploying to production:
+  1. Click your test link
+  2. Verify `dub_id` cookie is set
+  3. Trigger a test signup
+  4. Check that lead appears in Dub dashboard
+  5. Test a purchase to verify sale tracking
+</Accordion>
+
+## Troubleshooting
+
+<Accordion title="Leads not appearing">
+  - Verify analytics script is loaded on your site
+  - Check that `dub_id` cookie is set after clicking link
+  - Ensure API key has correct permissions
+  - Verify `customerExternalId` is unique per user
+  - Check that link has `trackConversion: true`
+</Accordion>
+
+<Accordion title="Sales not attributed">
+  - Confirm customer was tracked as a lead first
+  - Verify `customerExternalId` matches between lead and sale
+  - Check that sale occurred within attribution window (30 days)
+  - Ensure payment processor integration is configured
+</Accordion>
+
+<Accordion title="Duplicate conversions">
+  - Delete `dub_id` cookie after tracking lead
+  - Use unique `customerExternalId` to prevent duplicates
+  - Implement idempotency in your tracking code
+</Accordion>

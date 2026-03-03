@@ -1,0 +1,206 @@
+---
+title: Update a Customer
+description: Update a customer for the authenticated workspace
+---
+
+## Endpoint
+
+<ParamField path="method" type="string">
+  PATCH
+</ParamField>
+
+<ParamField path="url" type="string">
+  https://api.dub.co/customers/:id
+</ParamField>
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+```bash
+Authorization: Bearer DUB_API_KEY
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique ID of the customer. You may use either:
+  - The customer's `id` on Dub (obtained via `/customers` endpoint)
+  - Their `externalId` (unique ID within your system, prefixed with `ext_`, e.g. `ext_user_123456`)
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="includeExpandedFields" type="boolean">
+  Whether to include expanded fields on the customer (`link`, `partner`, `discount`).
+</ParamField>
+
+## Request Body
+
+All fields are optional. Only include the fields you want to update.
+
+<ParamField body="email" type="string">
+  The customer's email address.
+</ParamField>
+
+<ParamField body="name" type="string">
+  The customer's name. If not provided, the email address will be used, and if email is not provided, a random name will be generated.
+</ParamField>
+
+<ParamField body="avatar" type="string">
+  The customer's avatar URL. If not provided, a random avatar will be generated.
+</ParamField>
+
+<ParamField body="externalId" type="string">
+  The customer's unique identifier in your database. This is useful for associating subsequent conversion events from Dub's API to your internal systems.
+</ParamField>
+
+<ParamField body="stripeCustomerId" type="string">
+  The customer's Stripe customer ID. This is useful for attributing recurring sale events to the partner who referred the customer.
+</ParamField>
+
+<ParamField body="country" type="string">
+  The customer's country in ISO 3166-1 alpha-2 format. Updating this field will only affect the customer's country in Dub's system (and has no effect on existing conversion events).
+</ParamField>
+
+## Response
+
+Returns the updated customer object.
+
+<ResponseField name="id" type="string">
+  The unique ID of the customer
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the customer
+</ResponseField>
+
+<ResponseField name="email" type="string | null">
+  Email of the customer
+</ResponseField>
+
+<ResponseField name="avatar" type="string | null">
+  Avatar URL of the customer
+</ResponseField>
+
+<ResponseField name="externalId" type="string">
+  Unique identifier for the customer in the client's app
+</ResponseField>
+
+<ResponseField name="stripeCustomerId" type="string | null">
+  The customer's Stripe customer ID
+</ResponseField>
+
+<ResponseField name="country" type="string | null">
+  Country of the customer
+</ResponseField>
+
+<ResponseField name="sales" type="number | null">
+  Total number of sales for the customer
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number | null">
+  Total amount of sales for the customer
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  The date the customer was created
+</ResponseField>
+
+<ResponseField name="firstSaleAt" type="string | null">
+  The date the customer made their first sale
+</ResponseField>
+
+<ResponseField name="subscriptionCanceledAt" type="string | null">
+  The date the customer canceled their subscription
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X PATCH https://api.dub.co/customers/cus_xyz123 \
+  -H "Authorization: Bearer DUB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Smith",
+    "email": "john.smith@example.com",
+    "country": "US"
+  }'
+```
+
+```bash cURL (with external ID)
+curl -X PATCH https://api.dub.co/customers/ext_user_123456 \
+  -H "Authorization: Bearer DUB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stripeCustomerId": "cus_stripe123"
+  }'
+```
+
+```typescript TypeScript SDK
+import { Dub } from 'dub';
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const customer = await dub.customers.update('cus_xyz123', {
+  name: 'John Smith',
+  email: 'john.smith@example.com',
+  country: 'US',
+});
+```
+
+```python Python SDK
+from dub import Dub
+
+dub = Dub(token=os.environ["DUB_API_KEY"])
+
+customer = dub.customers.update(
+    "cus_xyz123",
+    name="John Smith",
+    email="john.smith@example.com",
+    country="US"
+)
+```
+
+```go Go SDK
+import (
+    "context"
+    "github.com/dubinc/dub-go"
+    "github.com/dubinc/dub-go/models/operations"
+)
+
+client := dub.New(
+    dub.WithSecurity(os.Getenv("DUB_API_KEY")),
+)
+
+customer, err := client.Customers.Update(context.Background(), "cus_xyz123", &operations.UpdateCustomerRequest{
+    Name: dub.String("John Smith"),
+    Email: dub.String("john.smith@example.com"),
+    Country: dub.String("US"),
+})
+```
+
+</CodeGroup>
+
+## Response Example
+
+```json
+{
+  "id": "cus_xyz123",
+  "name": "John Smith",
+  "email": "john.smith@example.com",
+  "avatar": "https://example.com/avatar.jpg",
+  "externalId": "user_123456",
+  "stripeCustomerId": "cus_stripe123",
+  "country": "US",
+  "sales": 3,
+  "saleAmount": 14997,
+  "createdAt": "2024-01-15T10:30:00.000Z",
+  "firstSaleAt": "2024-01-20T14:22:00.000Z",
+  "subscriptionCanceledAt": null
+}
+```

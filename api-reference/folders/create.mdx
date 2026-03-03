@@ -1,0 +1,116 @@
+---
+title: "Create a folder"
+description: "Create a folder for the authenticated workspace"
+---
+
+
+<Note>
+  Folders are available on Pro plans and above.
+</Note>
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.dub.co/folders \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Marketing Campaigns",
+    "description": "Links for marketing campaigns",
+    "accessLevel": "write"
+  }'
+```
+
+```typescript TypeScript
+import { Dub } from 'dub';
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+const folder = await dub.folders.create({
+  name: 'Marketing Campaigns',
+  description: 'Links for marketing campaigns',
+  accessLevel: 'write',
+});
+```
+
+```python Python
+from dub import Dub
+
+dub = Dub(token=os.environ['DUB_API_KEY'])
+
+folder = dub.folders.create(
+  name='Marketing Campaigns',
+  description='Links for marketing campaigns',
+  access_level='write',
+)
+```
+</CodeGroup>
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  The name of the folder.
+  
+  Maximum length: 190 characters
+</ParamField>
+
+<ParamField body="description" type="string">
+  The description of the folder.
+  
+  Maximum length: 500 characters
+</ParamField>
+
+<ParamField body="accessLevel" type="string">
+  The access level of the folder within the workspace.
+  
+  Options: `write`, `read`, `none`
+  
+  Note: Changing access level requires Business plan or above.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  The unique ID of the folder.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The name of the folder.
+</ResponseField>
+
+<ResponseField name="description" type="string | null">
+  The description of the folder.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  The type of the folder.
+</ResponseField>
+
+<ResponseField name="accessLevel" type="string | null">
+  The access level of the folder within the workspace.
+</ResponseField>
+
+<ResponseField name="createdAt" type="date">
+  The date the folder was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="date">
+  The date the folder was updated.
+</ResponseField>
+
+<ResponseExample>
+```json 201 Created
+{
+  "id": "fold_abc123",
+  "name": "Marketing Campaigns",
+  "description": "Links for marketing campaigns",
+  "type": "folder",
+  "accessLevel": "write",
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+</ResponseExample>

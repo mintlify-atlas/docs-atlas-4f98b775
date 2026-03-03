@@ -1,0 +1,223 @@
+---
+title: Retrieve a Customer
+description: Retrieve a customer by ID for the authenticated workspace
+---
+
+## Endpoint
+
+<ParamField path="method" type="string">
+  GET
+</ParamField>
+
+<ParamField path="url" type="string">
+  https://api.dub.co/customers/:id
+</ParamField>
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+```bash
+Authorization: Bearer DUB_API_KEY
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique ID of the customer. You may use either:
+  - The customer's `id` on Dub (obtained via `/customers` endpoint)
+  - Their `externalId` (unique ID within your system, prefixed with `ext_`, e.g. `ext_user_123456`)
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="includeExpandedFields" type="boolean">
+  Whether to include expanded fields on the customer (`link`, `partner`, `discount`).
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  The unique ID of the customer
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the customer
+</ResponseField>
+
+<ResponseField name="email" type="string | null">
+  Email of the customer
+</ResponseField>
+
+<ResponseField name="avatar" type="string | null">
+  Avatar URL of the customer
+</ResponseField>
+
+<ResponseField name="externalId" type="string">
+  Unique identifier for the customer in the client's app
+</ResponseField>
+
+<ResponseField name="stripeCustomerId" type="string | null">
+  The customer's Stripe customer ID. This is useful for attributing recurring sale events to the partner who referred the customer.
+</ResponseField>
+
+<ResponseField name="country" type="string | null">
+  Country of the customer
+</ResponseField>
+
+<ResponseField name="sales" type="number | null">
+  Total number of sales for the customer
+</ResponseField>
+
+<ResponseField name="saleAmount" type="number | null">
+  Total amount of sales for the customer
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  The date the customer was created (usually the signup date or trial start date)
+</ResponseField>
+
+<ResponseField name="firstSaleAt" type="string | null">
+  The date the customer made their first sale. Useful for calculating the time to first sale and LTV.
+</ResponseField>
+
+<ResponseField name="subscriptionCanceledAt" type="string | null">
+  The date the customer canceled their subscription. Useful for calculating LTV and churn rate.
+</ResponseField>
+
+<ResponseField name="link" type="object | null">
+  The referral link information (only included if `includeExpandedFields=true`)
+  
+  <ResponseField name="id" type="string">
+    Link ID
+  </ResponseField>
+  
+  <ResponseField name="domain" type="string">
+    Link domain
+  </ResponseField>
+  
+  <ResponseField name="key" type="string">
+    Link key/slug
+  </ResponseField>
+  
+  <ResponseField name="shortLink" type="string">
+    Full short link URL
+  </ResponseField>
+  
+  <ResponseField name="url" type="string">
+    Destination URL
+  </ResponseField>
+  
+  <ResponseField name="programId" type="string | null">
+    Associated program ID
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="programId" type="string | null">
+  The program ID the customer belongs to
+</ResponseField>
+
+<ResponseField name="partner" type="object | null">
+  Partner information (only included if `includeExpandedFields=true`)
+  
+  <ResponseField name="id" type="string">
+    Partner ID
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Partner name
+  </ResponseField>
+  
+  <ResponseField name="email" type="string">
+    Partner email
+  </ResponseField>
+  
+  <ResponseField name="image" type="string">
+    Partner image URL
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="discount" type="object | null">
+  Discount information (only included if `includeExpandedFields=true`)
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET https://api.dub.co/customers/cus_xyz123 \
+  -H "Authorization: Bearer DUB_API_KEY"
+```
+
+```bash cURL (with external ID)
+curl -X GET https://api.dub.co/customers/ext_user_123456 \
+  -H "Authorization: Bearer DUB_API_KEY"
+```
+
+```bash cURL (with expanded fields)
+curl -X GET "https://api.dub.co/customers/cus_xyz123?includeExpandedFields=true" \
+  -H "Authorization: Bearer DUB_API_KEY"
+```
+
+```typescript TypeScript SDK
+import { Dub } from 'dub';
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const customer = await dub.customers.get('cus_xyz123');
+```
+
+```typescript TypeScript SDK (with external ID)
+import { Dub } from 'dub';
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const customer = await dub.customers.get('ext_user_123456');
+```
+
+```python Python SDK
+from dub import Dub
+
+dub = Dub(token=os.environ["DUB_API_KEY"])
+
+customer = dub.customers.get("cus_xyz123")
+```
+
+```go Go SDK
+import (
+    "context"
+    "github.com/dubinc/dub-go"
+)
+
+client := dub.New(
+    dub.WithSecurity(os.Getenv("DUB_API_KEY")),
+)
+
+customer, err := client.Customers.Get(context.Background(), "cus_xyz123", nil)
+```
+
+</CodeGroup>
+
+## Response Example
+
+```json
+{
+  "id": "cus_xyz123",
+  "name": "John Doe",
+  "email": "john@example.com",
+  "avatar": "https://example.com/avatar.jpg",
+  "externalId": "user_123456",
+  "stripeCustomerId": "cus_stripe123",
+  "country": "US",
+  "sales": 3,
+  "saleAmount": 14997,
+  "createdAt": "2024-01-15T10:30:00.000Z",
+  "firstSaleAt": "2024-01-20T14:22:00.000Z",
+  "subscriptionCanceledAt": null
+}
+```

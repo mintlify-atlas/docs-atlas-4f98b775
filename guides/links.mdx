@@ -1,0 +1,441 @@
+---
+title: Creating and Managing Links
+description: Learn how to create, customize, and manage short links in Dub with advanced features like UTM parameters, device targeting, and A/B testing
+---
+
+Links are the core of Dub's link attribution platform. Create branded short links with powerful tracking, targeting, and customization options.
+
+## Creating a Link
+
+<Steps>
+  <Step title="Navigate to Links">
+    From your workspace dashboard, click "Create Link" or navigate to the Links page.
+  </Step>
+
+  <Step title="Enter Destination URL">
+    Paste the long URL you want to shorten:
+
+    ```
+    https://github.com/dubinc/dub
+    ```
+
+    Dub will automatically fetch Open Graph metadata (title, description, image) from the destination URL.
+  </Step>
+
+  <Step title="Customize Short Link">
+    <Tabs>
+      <Tab title="Domain">
+        Choose from your workspace domains:
+        - Default domain (e.g., `dub.sh`)
+        - Custom domains you've added
+        - Primary domain is selected by default
+      </Tab>
+
+      <Tab title="Key (Slug)">
+        Set a custom back-half for your link:
+        
+        ```
+        dub.sh/github
+        ```
+        
+        - Leave empty for auto-generated random key
+        - Use alphanumeric characters and hyphens
+        - Case-sensitive option available
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Configure Link Options (Optional)">
+    Add advanced features to your link (covered in detail below).
+  </Step>
+
+  <Step title="Create Link">
+    Click "Create" to generate your short link. It's immediately active and ready to share.
+  </Step>
+</Steps>
+
+## Link Configuration Options
+
+### Basic Settings
+
+<Accordion title="Destination URL">
+  The target URL where users will be redirected.
+
+  ```typescript
+  {
+    url: "https://github.com/dubinc/dub"
+  }
+  ```
+
+  <Note>
+  URLs are stored as `LongText` in the database to support very long URLs.
+  </Note>
+</Accordion>
+
+<Accordion title="Short Link Domain and Key">
+  Customize your branded short link:
+
+  ```typescript
+  {
+    domain: "dub.sh",
+    key: "github"
+  }
+  ```
+
+  Full short link: `https://dub.sh/github`
+</Accordion>
+
+### Metadata and Appearance
+
+<Accordion title="Custom Open Graph Tags">
+  Override the default OG metadata for social sharing:
+
+  ```typescript
+  {
+    title: "Dub - Open-Source Link Attribution Platform",
+    description: "The modern link attribution platform for short links, conversion tracking, and affiliate programs.",
+    image: "https://dub.co/og-image.png",
+    proxy: true  // Enable to use custom OG tags
+  }
+  ```
+
+  <Info>
+  When `proxy: true`, Dub will serve custom OG tags. When `proxy: false`, OG tags from the destination URL are used.
+  </Info>
+</Accordion>
+
+### UTM Parameters
+
+Automatically append UTM tracking parameters to your destination URL:
+
+```typescript
+{
+  utm_source: "twitter",
+  utm_medium: "social",
+  utm_campaign: "product-launch",
+  utm_term: "dub",
+  utm_content: "announcement"
+}
+```
+
+The destination URL will become:
+```
+https://github.com/dubinc/dub?utm_source=twitter&utm_medium=social&utm_campaign=product-launch&utm_term=dub&utm_content=announcement
+```
+
+<Note>
+UTM parameters are automatically extracted from your destination URL if already present.
+</Note>
+
+### Advanced Targeting
+
+<Accordion title="Device-Specific Redirects">
+  Redirect users to different URLs based on their device:
+
+  ```typescript
+  {
+    url: "https://example.com",        // Default URL
+    ios: "https://apps.apple.com/app", // iOS devices
+    android: "https://play.google.com/store/apps" // Android devices
+  }
+  ```
+
+  Perfect for directing users to platform-specific app stores or experiences.
+</Accordion>
+
+<Accordion title="Geographic Targeting">
+  Route users to different URLs based on their country:
+
+  ```typescript
+  {
+    url: "https://example.com",  // Default
+    geo: {
+      "US": "https://example.com/us",
+      "GB": "https://example.com/uk",
+      "FR": "https://example.com/fr"
+    }
+  }
+  ```
+
+  Use ISO 3166-1 alpha-2 country codes.
+</Accordion>
+
+### Conversion Tracking
+
+<Accordion title="Enable Conversion Tracking">
+  Track leads and sales attributed to this link:
+
+  ```typescript
+  {
+    trackConversion: true
+  }
+  ```
+
+  When enabled, Dub will:
+  - Track click events with unique click IDs
+  - Associate leads with the link
+  - Attribute sales and conversions
+  - Calculate revenue and ROI
+
+  See the [Tracking Conversions](/guides/tracking-conversions) guide for implementation details.
+</Accordion>
+
+### Link Expiration
+
+<Accordion title="Set Expiration Date">
+  Automatically disable links after a specific date:
+
+  ```typescript
+  {
+    expiresAt: "2026-12-31T23:59:59.000Z",
+    expiredUrl: "https://example.com/expired"  // Optional redirect
+  }
+  ```
+
+  <Warning>
+  Expired links will redirect to `expiredUrl` if set, otherwise return a 404.
+  </Warning>
+</Accordion>
+
+### Password Protection
+
+<Accordion title="Require Password">
+  Add password protection to your links:
+
+  ```typescript
+  {
+    password: "secret123"
+  }
+  ```
+
+  Users must enter the password before being redirected.
+</Accordion>
+
+### A/B Testing
+
+<Accordion title="Multi-Variant Testing">
+  Test different destination URLs with traffic splitting:
+
+  ```typescript
+  {
+    testVariants: [
+      { url: "https://example.com/variant-a", weight: 50 },
+      { url: "https://example.com/variant-b", weight: 30 },
+      { url: "https://example.com/variant-c", weight: 20 }
+    ],
+    testStartedAt: "2026-01-01T00:00:00.000Z",
+    testCompletedAt: "2026-01-31T23:59:59.000Z"
+  }
+  ```
+
+  Traffic is distributed based on weights (must sum to 100).
+</Accordion>
+
+## Creating Links via API
+
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    import { Dub } from 'dub';
+
+    const dub = new Dub({
+      token: process.env.DUB_API_KEY,
+    });
+
+    const link = await dub.links.create({
+      url: 'https://github.com/dubinc/dub',
+      domain: 'dub.sh',
+      key: 'github',
+      trackConversion: true,
+      tagNames: ['github', 'open-source'],
+      utm_source: 'twitter',
+      utm_medium: 'social',
+    });
+
+    console.log(link.shortLink); // https://dub.sh/github
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl -X POST https://api.dub.co/links \
+      -H "Authorization: Bearer dub_xxxxxx" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "url": "https://github.com/dubinc/dub",
+        "domain": "dub.sh",
+        "key": "github",
+        "trackConversion": true,
+        "tagNames": ["github", "open-source"],
+        "utm_source": "twitter",
+        "utm_medium": "social"
+      }'
+    ```
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    # Install Dub CLI
+    npm install -g @dub/cli
+
+    # Configure API key
+    dub config
+
+    # Create a link
+    dub shorten https://github.com/dubinc/dub
+
+    # List links
+    dub links --search github --limit 10
+    ```
+  </Tab>
+</Tabs>
+
+## Link Schema
+
+Complete link object structure:
+
+```typescript
+{
+  id: string,                   // Unique link ID (link_xxxxx)
+  domain: string,               // Short link domain
+  key: string,                  // Short link key/slug
+  shortLink: string,            // Full short link URL
+  url: string,                  // Destination URL
+  archived: boolean,            // Archive status
+  expiresAt: Date | null,       // Expiration date
+  expiredUrl: string | null,    // Redirect when expired
+  password: string | null,      // Password protection
+  trackConversion: boolean,     // Conversion tracking enabled
+  proxy: boolean,               // Use custom OG tags
+  title: string | null,         // OG title
+  description: string | null,   // OG description
+  image: string | null,         // OG image URL
+  
+  // UTM Parameters
+  utm_source: string | null,
+  utm_medium: string | null,
+  utm_campaign: string | null,
+  utm_term: string | null,
+  utm_content: string | null,
+  
+  // Device & Geo targeting
+  ios: string | null,           // iOS redirect URL
+  android: string | null,       // Android redirect URL
+  geo: object | null,           // Geographic redirects
+  
+  // A/B Testing
+  testVariants: object | null,  // Test configuration
+  testStartedAt: Date | null,
+  testCompletedAt: Date | null,
+  
+  // Analytics
+  clicks: number,               // Total clicks
+  leads: number,                // Total leads
+  conversions: number,          // Conversions (leads → sales)
+  sales: number,                // Total sales
+  saleAmount: number,           // Revenue in cents
+  
+  // Metadata
+  publicStats: boolean,         // Public analytics enabled
+  createdAt: Date,              // Creation timestamp
+  updatedAt: Date,              // Last update
+  lastClicked: Date | null,     // Last click time
+}
+```
+
+## Link Management
+
+### Organizing Links
+
+<Tabs>
+  <Tab title="Folders">
+    Group related links in folders:
+
+    - Navigate to Links > Folders
+    - Create folders by campaign, product, or channel
+    - Drag and drop links into folders
+    - Filter analytics by folder
+  </Tab>
+
+  <Tab title="Tags">
+    Add multiple tags to links for flexible filtering:
+
+    ```typescript
+    {
+      tagNames: ['product-launch', 'social-media', 'paid']
+    }
+    ```
+
+    - Filter links by tag
+    - View analytics aggregated by tag
+    - Create up to your plan's tag limit
+  </Tab>
+</Tabs>
+
+### Bulk Operations
+
+<Accordion title="Import Links">
+  Import multiple links via CSV:
+
+  1. Download the CSV template
+  2. Fill in URL, domain, key, and metadata
+  3. Upload to Dub
+  4. Review and confirm import
+</Accordion>
+
+<Accordion title="Export Links">
+  Export your links to CSV for backup or analysis:
+
+  - Select links to export or export all
+  - Includes all metadata and analytics
+  - Compatible with spreadsheet software
+</Accordion>
+
+### Link Analytics
+
+View detailed analytics for each link:
+
+- **Clicks**: Total clicks over time
+- **Locations**: Geographic distribution
+- **Devices**: Desktop, mobile, tablet breakdown
+- **Browsers**: Browser and OS statistics
+- **Referrers**: Traffic sources
+- **Conversions**: Leads and sales attributed
+
+<Info>
+Public analytics can be enabled per link to share statistics via a public URL.
+</Info>
+
+## Best Practices
+
+<Accordion title="Use Descriptive Keys">
+  Choose memorable, descriptive keys that hint at the destination:
+  
+  ✅ `dub.sh/github-repo`
+  ❌ `dub.sh/abc123`
+</Accordion>
+
+<Accordion title="Enable Conversion Tracking">
+  Always enable conversion tracking for marketing and attribution campaigns to measure ROI.
+</Accordion>
+
+<Accordion title="Organize with Tags">
+  Use consistent tagging conventions to make filtering and reporting easier:
+  
+  - `channel:twitter`, `channel:email`
+  - `campaign:q1-2026`, `campaign:product-launch`
+  - `type:organic`, `type:paid`
+</Accordion>
+
+<Accordion title="Set Expiration Dates">
+  For time-limited campaigns, set expiration dates to automatically disable links and redirect to a fallback page.
+</Accordion>
+
+<Accordion title="Test Before Sharing">
+  Always test your short links before sharing in campaigns to verify:
+  
+  - Destination URL is correct
+  - UTM parameters are appended
+  - Device/geo targeting works
+  - OG tags display properly on social media
+</Accordion>

@@ -1,0 +1,563 @@
+---
+title: Errors
+description: Understand error responses from the Dub API and how to handle them.
+---
+
+The Dub API uses conventional HTTP status codes to indicate the success or failure of requests. All error responses follow a consistent JSON format.
+
+## Error Response Format
+
+All error responses return a JSON object with an `error` property:
+
+```json
+{
+  "error": {
+    "code": "not_found",
+    "message": "The requested resource was not found.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#not-found"
+  }
+}
+```
+
+### Error Object Properties
+
+<ResponseField name="error" type="object" required>
+  Container object for error details.
+  
+  <ResponseField name="code" type="string" required>
+    A short code indicating the error type. Use this for programmatic error handling.
+    
+    Example: `not_found`, `unauthorized`, `rate_limit_exceeded`
+  </ResponseField>
+  
+  <ResponseField name="message" type="string" required>
+    A human-readable explanation of what went wrong. This message is safe to display to end users.
+    
+    Example: `"The requested resource was not found."`
+  </ResponseField>
+  
+  <ResponseField name="doc_url" type="string">
+    A link to documentation with more details about this error code.
+    
+    Example: `"https://dub.co/docs/api-reference/errors#not-found"`
+  </ResponseField>
+</ResponseField>
+
+## HTTP Status Codes
+
+The Dub API uses standard HTTP status codes:
+
+### Success Codes
+
+- `200 OK` - The request succeeded
+- `201 Created` - A resource was successfully created
+
+### Client Error Codes
+
+- `400 Bad Request` - The request was malformed or invalid
+- `401 Unauthorized` - Authentication failed or was not provided
+- `403 Forbidden` - The authenticated user lacks permission
+- `404 Not Found` - The requested resource doesn't exist
+- `409 Conflict` - The request conflicts with the current state
+- `410 Gone` - The resource has been permanently deleted
+- `422 Unprocessable Entity` - The request was valid but couldn't be processed
+- `429 Too Many Requests` - Rate limit exceeded
+
+### Server Error Codes
+
+- `500 Internal Server Error` - An error occurred on the server
+
+## Error Codes
+
+### bad_request
+
+**HTTP Status**: `400`
+
+The server cannot process the request due to a client error, such as malformed syntax or invalid parameters.
+
+**Common Causes**:
+- Invalid JSON in request body
+- Missing required fields
+- Malformed authorization header
+- Invalid parameter values
+
+**Example**:
+```json
+{
+  "error": {
+    "code": "bad_request",
+    "message": "Misconfigured authorization header. Did you forget to add 'Bearer '? Learn more: https://d.to/auth",
+    "doc_url": "https://dub.co/docs/api-reference/errors#bad-request"
+  }
+}
+```
+
+### unauthorized
+
+**HTTP Status**: `401`
+
+Authentication is required but was not provided, is invalid, or has expired.
+
+**Common Causes**:
+- Missing `Authorization` header
+- Invalid API token
+- Expired API token
+- Token doesn't match the workspace
+
+**Examples**:
+
+<CodeGroup>
+
+```json Missing Header
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Missing Authorization header.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#unauthorized"
+  }
+}
+```
+
+```json Invalid Token
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Unauthorized: Invalid API key.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#unauthorized"
+  }
+}
+```
+
+```json Expired Token
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Unauthorized: Access token expired.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#unauthorized"
+  }
+}
+```
+
+```json Login Required
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Unauthorized: Login required.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#unauthorized"
+  }
+}
+```
+
+</CodeGroup>
+
+### forbidden
+
+**HTTP Status**: `403`
+
+The client is authenticated but doesn't have permission to access the resource.
+
+**Common Causes**:
+- Insufficient token scopes
+- User role lacks required permissions
+- Plan doesn't support the feature
+- Beta feature not enabled for workspace
+
+**Examples**:
+
+<CodeGroup>
+
+```json Insufficient Role
+{
+  "error": {
+    "code": "forbidden",
+    "message": "You don't have the required role to access this endpoint. Required role(s): owner.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#forbidden"
+  }
+}
+```
+
+```json Plan Upgrade Needed
+{
+  "error": {
+    "code": "forbidden",
+    "message": "Unauthorized: Need higher plan.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#forbidden"
+  }
+}
+```
+
+```json Analytics API on Free Plan
+{
+  "error": {
+    "code": "forbidden",
+    "message": "Analytics API is only available on paid plans.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#forbidden"
+  }
+}
+```
+
+```json Beta Feature
+{
+  "error": {
+    "code": "forbidden",
+    "message": "Unauthorized: Beta feature.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#forbidden"
+  }
+}
+```
+
+</CodeGroup>
+
+### not_found
+
+**HTTP Status**: `404`
+
+The requested resource doesn't exist.
+
+**Common Causes**:
+- Invalid resource ID
+- Resource was deleted
+- Workspace doesn't exist
+- Incorrect endpoint URL
+
+**Examples**:
+
+<CodeGroup>
+
+```json Resource Not Found
+{
+  "error": {
+    "code": "not_found",
+    "message": "The requested resource was not found.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#not-found"
+  }
+}
+```
+
+```json Workspace Not Found
+{
+  "error": {
+    "code": "not_found",
+    "message": "Workspace not found.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#not-found"
+  }
+}
+```
+
+```json Missing Workspace ID
+{
+  "error": {
+    "code": "not_found",
+    "message": "Workspace ID not found. Did you forget to include a `workspaceId` query parameter? It looks like you might be using personal API keys, we also recommend refactoring to workspace API keys: https://d.to/keys",
+    "doc_url": "https://dub.co/docs/api-reference/errors#not-found"
+  }
+}
+```
+
+</CodeGroup>
+
+### conflict
+
+**HTTP Status**: `409`
+
+The request conflicts with the current state of the server.
+
+**Common Causes**:
+- Duplicate resource (e.g., link with same short code already exists)
+- Resource state conflict
+- Concurrent modification
+
+**Example**:
+```json
+{
+  "error": {
+    "code": "conflict",
+    "message": "A link with this short code already exists.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#conflict"
+  }
+}
+```
+
+### invite_pending
+
+**HTTP Status**: `409`
+
+The user has a pending invite to the workspace but hasn't accepted it yet.
+
+**Example**:
+```json
+{
+  "error": {
+    "code": "invite_pending",
+    "message": "Workspace invite pending.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#invite-pending"
+  }
+}
+```
+
+### invite_expired
+
+**HTTP Status**: `410`
+
+The workspace invite has expired.
+
+**Example**:
+```json
+{
+  "error": {
+    "code": "invite_expired",
+    "message": "Workspace invite expired.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#invite-expired"
+  }
+}
+```
+
+### unprocessable_entity
+
+**HTTP Status**: `422`
+
+The request was well-formed but contains semantic errors or validation failures.
+
+**Common Causes**:
+- Invalid field values
+- Failed validation rules
+- Type mismatches
+- Out of range values
+
+**Example**:
+```json
+{
+  "error": {
+    "code": "unprocessable_entity",
+    "message": "url: Invalid URL format",
+    "doc_url": "https://dub.co/docs/api-reference/errors#unprocessable-entity"
+  }
+}
+```
+
+<Note>
+Validation errors include the field path and specific validation issue in the message, making it easy to identify and fix the problem.
+</Note>
+
+### rate_limit_exceeded
+
+**HTTP Status**: `429`
+
+You've sent too many requests in a given time period.
+
+**Example**:
+```json
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "Too many requests.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#rate-limit-exceeded"
+  }
+}
+```
+
+**Response Headers**:
+```http
+X-RateLimit-Limit: 600
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1699564860
+Retry-After: 60
+```
+
+See the [Rate Limits](/api-reference/rate-limits) page for more information.
+
+### internal_server_error
+
+**HTTP Status**: `500`
+
+An unexpected error occurred on the server.
+
+**Example**:
+```json
+{
+  "error": {
+    "code": "internal_server_error",
+    "message": "An internal server error occurred. Please contact our support if the problem persists.",
+    "doc_url": "https://dub.co/docs/api-reference/errors#internal-server-error"
+  }
+}
+```
+
+<Warning>
+If you encounter repeated `500` errors, please contact [support@dub.co](mailto:support@dub.co) with the request details.
+</Warning>
+
+## Error Handling Best Practices
+
+### 1. Check HTTP Status Codes
+
+Always check the HTTP status code to determine if the request was successful:
+
+```javascript
+const response = await fetch('https://api.dub.co/links?workspaceId=ws_abc123', {
+  headers: {
+    'Authorization': 'Bearer dub_xxxxxxxxxxxxx',
+  },
+});
+
+if (!response.ok) {
+  const error = await response.json();
+  console.error(`Error ${error.error.code}: ${error.error.message}`);
+  throw new Error(error.error.message);
+}
+
+const data = await response.json();
+```
+
+### 2. Handle Specific Error Codes
+
+Implement specific handling for different error codes:
+
+```javascript
+async function createLink(linkData) {
+  try {
+    const response = await fetch('https://api.dub.co/links?workspaceId=ws_abc123', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer dub_xxxxxxxxxxxxx',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(linkData),
+    });
+
+    if (response.ok) {
+      return await response.json();
+    }
+
+    const error = await response.json();
+
+    switch (error.error.code) {
+      case 'unauthorized':
+        // Refresh token or re-authenticate
+        throw new Error('Authentication failed');
+      
+      case 'rate_limit_exceeded':
+        // Implement retry with backoff
+        const retryAfter = response.headers.get('Retry-After');
+        await sleep(parseInt(retryAfter) * 1000);
+        return createLink(linkData);
+      
+      case 'unprocessable_entity':
+        // Show validation error to user
+        throw new ValidationError(error.error.message);
+      
+      case 'conflict':
+        // Handle duplicate resource
+        throw new Error('Link already exists');
+      
+      default:
+        throw new Error(error.error.message);
+    }
+  } catch (err) {
+    console.error('Failed to create link:', err);
+    throw err;
+  }
+}
+```
+
+### 3. Use Error Messages
+
+Error messages are designed to be user-friendly and can be displayed to end users:
+
+```python
+import requests
+
+try:
+    response = requests.post(
+        'https://api.dub.co/links',
+        params={'workspaceId': 'ws_abc123'},
+        headers={'Authorization': 'Bearer dub_xxxxxxxxxxxxx'},
+        json={'url': 'https://example.com'},
+    )
+    response.raise_for_status()
+    link = response.json()
+except requests.exceptions.HTTPError as e:
+    error = e.response.json()
+    # Safe to show to users
+    print(f"Error: {error['error']['message']}")
+    # Link to more info
+    print(f"Learn more: {error['error']['doc_url']}")
+```
+
+### 4. Implement Retry Logic
+
+For transient errors (rate limits, server errors), implement retry logic:
+
+```javascript
+async function makeRequestWithRetry(url, options, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      
+      const error = await response.json();
+      
+      // Don't retry client errors (except rate limits)
+      if (response.status >= 400 && response.status < 500) {
+        if (error.error.code === 'rate_limit_exceeded') {
+          const retryAfter = response.headers.get('Retry-After');
+          await sleep(parseInt(retryAfter || 60) * 1000);
+          continue;
+        }
+        throw new Error(error.error.message);
+      }
+      
+      // Retry server errors with exponential backoff
+      if (response.status >= 500 && attempt < maxRetries - 1) {
+        await sleep(Math.pow(2, attempt) * 1000);
+        continue;
+      }
+      
+      throw new Error(error.error.message);
+    } catch (err) {
+      if (attempt === maxRetries - 1) throw err;
+    }
+  }
+}
+```
+
+### 5. Log Errors for Debugging
+
+Always log error details for debugging:
+
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+try:
+    response = requests.get(
+        'https://api.dub.co/links',
+        params={'workspaceId': 'ws_abc123'},
+        headers={'Authorization': 'Bearer dub_xxxxxxxxxxxxx'},
+    )
+    response.raise_for_status()
+except requests.exceptions.HTTPError as e:
+    error = e.response.json()
+    logger.error(
+        f"API error: {error['error']['code']}",
+        extra={
+            'status_code': e.response.status_code,
+            'error_code': error['error']['code'],
+            'message': error['error']['message'],
+            'doc_url': error['error']['doc_url'],
+        }
+    )
+    raise
+```
+
+## Need Help?
+
+If you're experiencing errors that aren't covered here:
+
+1. Check the `doc_url` in the error response for specific documentation
+2. Review your request against the [API Reference](https://dub.co/docs/api-reference)
+3. Contact support at [support@dub.co](mailto:support@dub.co)

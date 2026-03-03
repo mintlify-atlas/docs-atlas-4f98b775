@@ -1,0 +1,58 @@
+---
+title: "Delete a domain"
+description: "Delete a domain from a workspace. It cannot be undone. This will also delete all the links associated with the domain."
+---
+
+
+<Warning>
+  This operation cannot be undone. Deleting a domain will also delete all links associated with it.
+</Warning>
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.dub.co/domains/acme.com \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+import { Dub } from 'dub';
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+const result = await dub.domains.delete('acme.com');
+```
+
+```python Python
+from dub import Dub
+
+dub = Dub(token=os.environ['DUB_API_KEY'])
+
+result = dub.domains.delete('acme.com')
+```
+</CodeGroup>
+
+## Path Parameters
+
+<ParamField path="slug" type="string" required>
+  The domain name to delete.
+  
+  Example: `acme.com`
+</ParamField>
+
+## Response
+
+<ResponseField name="slug" type="string">
+  The domain name that was deleted.
+</ResponseField>
+
+<ResponseExample>
+```json 200 OK
+{
+  "slug": "acme.com"
+}
+```
+</ResponseExample>

@@ -1,0 +1,350 @@
+---
+title: CLI Commands
+description: Complete reference for all Dub CLI commands and their options
+---
+
+Complete reference for all commands available in the Dub CLI.
+
+## Global Options
+
+These options are available for all commands:
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--version` | `-v` | Display the version number |
+| `--help` | `-h` | Display help for a command |
+
+## Authentication Commands
+
+### `dub login`
+
+Log into the Dub platform using OAuth authentication.
+
+```bash
+dub login
+```
+
+**What it does:**
+
+1. Generates a secure code verifier for OAuth PKCE flow
+2. Opens your browser to Dub's authentication page
+3. Starts a local server on `http://localhost:4587/callback`
+4. Waits for authentication callback
+5. Exchanges authorization code for access token
+6. Stores credentials securely
+
+**OAuth Scopes:**
+- `links.read` - Read links from your workspace
+- `links.write` - Create and update links
+- `domains.read` - Read domain information
+
+**Example:**
+
+```bash
+$ dub login
+✓ Opening browser for authentication
+✓ Waiting for authentication
+✓ Successfully logged in!
+```
+
+### `dub config`
+
+View your configured credentials and workspace settings.
+
+```bash
+dub config
+```
+
+**Output includes:**
+- Access token
+- Refresh token  
+- Configured domain
+- Token expiration
+
+**Example:**
+
+```bash
+$ dub config
+✓ Configuration file successfully retrieved
+
+{
+  "access_token": "dub_xxxxx...",
+  "refresh_token": "dub_xxxxx...",
+  "domain": "yourdomain.com",
+  "expires_at": 1234567890
+}
+```
+
+## Domain Management
+
+### `dub domains`
+
+Configure your workspace domain for creating short links.
+
+```bash
+dub domains
+```
+
+**What it does:**
+
+1. Fetches all available domains from your workspace
+2. Includes both custom and default Dub domains
+3. Presents an interactive selection prompt
+4. Saves the selected domain to configuration
+
+**Example:**
+
+```bash
+$ dub domains
+✓ Fetching domains
+
+? Select a domain
+  yourdomain.com
+  anotherdomain.com
+  dub.sh
+❯ go.yourdomain.com
+
+✓ Done
+✓ Success! Configuration updated.
+```
+
+## Link Management
+
+### `dub shorten`
+
+Create a new short link.
+
+```bash
+dub shorten [url] [key]
+```
+
+**Arguments:**
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `url` | Optional | Destination URL for the short link |
+| `key` | Optional | Custom short link key (slug) |
+
+**Interactive Mode:**
+
+If you don't provide arguments, the CLI will prompt you:
+
+```bash
+$ dub shorten
+? Enter your Destination URL: https://example.com/page
+? Enter your Short link: custom-key
+✓ Creating new short link
+✓ New short link created!
+
+https://yourdomain.com/custom-key
+```
+
+**Direct Mode:**
+
+Provide both URL and key:
+
+```bash
+$ dub shorten https://example.com/page my-link
+✓ Creating new short link
+✓ New short link created!
+
+https://yourdomain.com/my-link
+```
+
+**Auto-generated Key:**
+
+Provide only URL, get a random key:
+
+```bash
+$ dub shorten https://example.com/page
+✓ Creating new short link
+✓ New short link created!
+
+https://yourdomain.com/aBc123XyZ
+```
+
+**Features:**
+- Validates destination URL
+- Generates random keys using nanoid
+- Checks for key conflicts
+- Returns the complete short link URL
+
+### `dub links`
+
+Search for links in your Dub workspace.
+
+```bash
+dub links [options]
+```
+
+**Options:**
+
+| Option | Alias | Type | Description |
+|--------|-------|------|-------------|
+| `--search [search]` | `-s` | string | Search term to filter links |
+| `--limit [limit]` | `-l` | number | Number of links to fetch (default: 10) |
+
+**Examples:**
+
+**List recent links:**
+
+```bash
+$ dub links
+✓ Fetching links
+
+┌─────────────────────────────────┬─────────────────────────────┬────────┬──────────────────┐
+│ Short Link                      │ Destination URL             │ Clicks │ Created At       │
+├─────────────────────────────────┼─────────────────────────────┼────────┼──────────────────┤
+│ https://yourdomain.com/abc123   │ https://example.com/page1   │ 42     │ Jan 15, 2:30 PM  │
+│ https://yourdomain.com/xyz789   │ https://example.com/page2   │ 18     │ Jan 14, 10:15 AM │
+└─────────────────────────────────┴─────────────────────────────┴────────┴──────────────────┘
+```
+
+**Search for specific links:**
+
+```bash
+$ dub links --search "example" --limit 5
+✓ Fetching links
+
+┌─────────────────────────────────┬─────────────────────────────┬────────┬──────────────────┐
+│ Short Link                      │ Destination URL             │ Clicks │ Created At       │
+├─────────────────────────────────┼─────────────────────────────┼────────┼──────────────────┤
+│ https://yourdomain.com/example1 │ https://example.com/page    │ 156    │ Jan 10, 4:20 PM  │
+│ https://yourdomain.com/example2 │ https://example.com/docs    │ 89     │ Jan 9, 11:45 AM  │
+└─────────────────────────────────┴─────────────────────────────┴────────┴──────────────────┘
+```
+
+**Using aliases:**
+
+```bash
+$ dub links -s "product" -l 20
+```
+
+**Table Columns:**
+- **Short Link** - The shortened URL
+- **Destination URL** - Where the link redirects
+- **Clicks** - Total number of clicks
+- **Created At** - When the link was created (formatted)
+
+## Help Command
+
+### `dub help`
+
+Display help information for the CLI or a specific command.
+
+```bash
+dub help [command]
+```
+
+**General help:**
+
+```bash
+$ dub help
+Usage: dub [options] [command]
+
+A CLI for shortening links with the Dub API.
+
+Options:
+  -v, --version        display the version number
+  -h, --help          display help for command
+
+Commands:
+  login               Log into the Dub platform
+  config              See your configured credentials
+  domains             Configure your workspace domain
+  shorten [url] [key] Create a short link
+  links [options]     Search for links in your Dub workspace
+  help [command]      display help for command
+```
+
+**Command-specific help:**
+
+```bash
+$ dub help shorten
+Usage: dub shorten [options] [url] [key]
+
+Create a short link
+
+Arguments:
+  url         Destination URL
+  key         Short key (default: auto-generated)
+
+Options:
+  -h, --help  display help for command
+```
+
+## Command Aliases
+
+Commands can be called using their short forms:
+
+```bash
+# These are equivalent:
+dub links --search "term" --limit 10
+dub links -s "term" -l 10
+```
+
+## Error Handling
+
+The CLI provides helpful error messages:
+
+**Authentication required:**
+
+```bash
+$ dub shorten https://example.com
+✗ Error: Not authenticated. Run 'dub login' first.
+```
+
+**Domain not configured:**
+
+```bash
+$ dub shorten https://example.com
+✗ Error: No domain configured. Run 'dub domains' first.
+```
+
+**Invalid URL:**
+
+```bash
+$ dub shorten invalid-url
+✗ Error: Please provide a valid URL
+```
+
+**Link already exists:**
+
+```bash
+$ dub shorten https://example.com existing-key
+✗ Failed to create link
+Error: A link with this key already exists
+```
+
+## Environment Variables
+
+The CLI respects these environment variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------||
+| `DUB_API_URL` | Base API URL | `https://api.dub.co` |
+| `DUB_OAUTH_URL` | OAuth URL | `https://app.dub.co` |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|----------|
+| 0 | Success |
+| 1 | Error occurred |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="CLI Installation" icon="download" href="/sdks/cli/installation">
+    Install and configure the CLI
+  </Card>
+  <Card title="CLI Overview" icon="book" href="/sdks/cli/overview">
+    Back to CLI overview
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the API
+  </Card>
+  <Card title="Server SDKs" icon="server" href="/sdks/overview">
+    Use programmatic SDKs
+  </Card>
+</CardGroup>

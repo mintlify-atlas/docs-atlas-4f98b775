@@ -1,0 +1,537 @@
+---
+title: "Database Setup"
+description: "Configure MySQL database for your self-hosted Dub instance"
+---
+
+## Overview
+
+Dub uses MySQL 8.0+ as its primary database, managed through Prisma ORM. This guide covers database setup for both local development and production environments.
+
+## Database Requirements
+
+- MySQL 8.0 or higher
+- Minimum 1GB RAM allocated to database
+- Support for at least 1000 concurrent connections
+- InnoDB storage engine (default)
+
+## Supported Platforms
+
+### Recommended Platforms
+
+- **PlanetScale** - Serverless MySQL platform (recommended for production)
+- **Amazon RDS for MySQL** - Managed MySQL on AWS
+- **Google Cloud SQL for MySQL** - Managed MySQL on GCP
+- **Azure Database for MySQL** - Managed MySQL on Azure
+- **Self-managed MySQL 8.0+** - On your own infrastructure
+
+### PlanetScale (Recommended)
+
+PlanetScale provides a serverless MySQL platform with branching, non-blocking schema changes, and automatic backups.
+
+<Steps>
+  <Step title="Create Database">
+    1. Sign up at [planetscale.com](https://planetscale.com)
+    2. Create a new database
+    3. Note your database name
+  </Step>
+
+  <Step title="Generate Connection String">
+    1. Go to your database settings
+    2. Click "Connect"
+    3. Select "Prisma" as the connection method
+    4. Copy the connection string
+  </Step>
+
+  <Step title="Configure Environment">
+    Add the connection string to your `.env` file:
+
+    ```bash
+    DATABASE_URL="mysql://username:password@host.connect.psdb.cloud/database?sslaccept=strict"
+    ```
+  </Step>
+</Steps>
+
+### Amazon RDS for MySQL
+
+<Steps>
+  <Step title="Create RDS Instance">
+    1. Open AWS RDS Console
+    2. Click "Create database"
+    3. Choose MySQL 8.0 or higher
+    4. Select instance size (minimum `db.t3.micro` for testing)
+    5. Configure VPC and security groups
+  </Step>
+
+  <Step title="Configure Security Group">
+    Allow inbound traffic on port 3306 from your application servers:
+
+    - **Type:** MySQL/Aurora
+    - **Port:** 3306
+    - **Source:** Your application's security group or IP range
+  </Step>
+
+  <Step title="Set Connection String">
+    ```bash
+    DATABASE_URL="mysql://username:password@database-name.region.rds.amazonaws.com:3306/dub"
+    ```
+  </Step>
+</Steps>
+
+### Self-Managed MySQL
+
+<Steps>
+  <Step title="Install MySQL 8.0">
+    **Ubuntu/Debian:**
+    ```bash
+    sudo apt update
+    sudo apt install mysql-server-8.0
+    ```
+
+    **macOS (Homebrew):**
+    ```bash
+    brew install mysql@8.0
+    ```
+
+    **Docker:**
+    ```bash
+    docker run -d \
+      --name dub-mysql \
+      -e MYSQL_ROOT_PASSWORD=yourpassword \
+      -e MYSQL_DATABASE=dub \
+      -p 3306:3306 \
+      mysql:8.0
+    ```
+  </Step>
+
+  <Step title="Configure MySQL">
+    Edit MySQL configuration (`/etc/mysql/mysql.conf.d/mysqld.cnf`):
+
+    ```ini
+    [mysqld]
+    max_connections = 1000
+    default-authentication-plugin = mysql_native_password
+    ```
+
+    Restart MySQL:
+    ```bash
+    sudo systemctl restart mysql
+    ```
+  </Step>
+
+  <Step title="Create Database and User">
+    ```sql
+    CREATE DATABASE dub CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE USER 'dubuser'@'%' IDENTIFIED BY 'secure_password';
+    GRANT ALL PRIVILEGES ON dub.* TO 'dubuser'@'%';
+    FLUSH PRIVILEGES;
+    ```
+  </Step>
+
+  <Step title="Set Connection String">
+    ```bash
+    DATABASE_URL="mysql://dubuser:secure_password@localhost:3306/dub"
+    ```
+  </Step>
+</Steps>
+
+## Local Development Setup
+
+For local development, use Docker Compose to run MySQL and PlanetScale proxy.
+
+### Using Docker Compose
+
+Dub includes a `docker-compose.yml` file for local development:
+
+```yaml docker-compose.yml
+services:
+  ps-mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: planetscale
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    command:
+      [
+        "--max_connections=1000",
+        "--default-authentication-plugin=mysql_native_password",
+      ]
+    ports:
+      - 3306:3306
+    volumes:
+      - ps-mysql:/var/lib/mysql
+
+  planetscale-proxy:
+    image: ghcr.io/mattrobenolt/ps-http-sim:latest
+    command:
+      [
+        "-mysql-no-pass",
+        "-listen-port=3900",
+        "-mysql-dbname=planetscale",
+        "-mysql-addr=ps-mysql",
+      ]
+    depends_on:
+      - ps-mysql
+    ports:
+      - 3900:3900
+
+volumes:
+  ps-mysql:
+```
+
+<Steps>
+  <Step title="Start Services">
+    From the `apps/web` directory:
+
+    ```bash
+    docker compose up -d
+    ```
+
+    This starts:
+    - MySQL 8.0 on port `3306`
+    - PlanetScale HTTP proxy on port `3900`
+  </Step>
+
+  <Step title="Configure Environment">
+    Update your `.env` file:
+
+    ```bash
+    DATABASE_URL="mysql://root:@localhost:3306/planetscale"
+    PLANETSCALE_DATABASE_URL="http://root:unused@localhost:3900/planetscale"
+    ```
+  </Step>
+
+  <Step title="Verify Connection">
+    Test the connection:
+
+    ```bash
+    docker compose ps
+    ```
+
+    Both services should show as "Up".
+  </Step>
+</Steps>
+
+## Prisma Configuration
+
+Dub uses Prisma for database management. The schema is located at `packages/prisma/schema/schema.prisma`.
+
+### Prisma Schema Overview
+
+```prisma
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+```
+
+The `relationMode = "prisma"` setting enables Prisma to handle foreign key constraints at the application level, which is required for PlanetScale compatibility.
+
+### Prisma Commands
+
+Dub includes several Prisma commands in `package.json`:
+
+<CodeGroup>
+
+```bash Generate Prisma Client
+pnpm prisma:generate
+```
+
+```bash Push Schema to Database
+pnpm prisma:push
+```
+
+```bash Open Prisma Studio
+pnpm prisma:studio
+```
+
+```bash Format Schema
+pnpm prisma:format
+```
+
+</CodeGroup>
+
+## Initial Database Setup
+
+<Steps>
+  <Step title="Generate Prisma Client">
+    Generate the Prisma client from the schema:
+
+    ```bash
+    cd apps/web
+    pnpm prisma:generate
+    ```
+
+    This creates the Prisma client in `node_modules/@prisma/client`.
+  </Step>
+
+  <Step title="Push Schema to Database">
+    Create all tables in the database:
+
+    ```bash
+    pnpm prisma:push
+    ```
+
+    This command:
+    - Reads the Prisma schema
+    - Creates all tables and columns
+    - Sets up indexes
+    - Configures relationships
+
+    <Warning>
+      `prisma:push` is destructive and should only be used in development or for initial setup. For production, use proper migration workflows.
+    </Warning>
+  </Step>
+
+  <Step title="Verify Schema">
+    Open Prisma Studio to verify the database structure:
+
+    ```bash
+    pnpm prisma:studio
+    ```
+
+    This opens a web interface at `http://localhost:5555` where you can:
+    - Browse all tables
+    - View and edit data
+    - Test queries
+  </Step>
+
+  <Step title="Seed Development Data (Optional)">
+    For local development, you can seed the database with test data:
+
+    ```bash
+    pnpm run script dev/seed
+    ```
+
+    To reset the database before seeding:
+
+    ```bash
+    pnpm run script dev/seed --truncate
+    ```
+
+    <Note>
+      The seed script will prompt for confirmation when using `--truncate` to prevent accidental data loss.
+    </Note>
+  </Step>
+</Steps>
+
+## Database Schema
+
+Dub's database includes the following core tables:
+
+- **User** - User accounts and authentication
+- **Account** - OAuth provider accounts
+- **Session** - User sessions for NextAuth.js
+- **Project** - Workspaces/organizations
+- **ProjectUsers** - User memberships in projects
+- **Link** - Short links
+- **Domain** - Custom domains
+- **Tag** - Link tags and labels
+- **Token** - API tokens
+- **RestrictedToken** - Restricted API tokens with scoped permissions
+- **Integration** - Third-party integrations
+- **Partner** - Affiliate program partners
+- **Program** - Affiliate programs
+- **Payout** - Partner payouts
+- **Commission** - Affiliate commissions
+
+And many more supporting tables for analytics, webhooks, notifications, etc.
+
+## Connection Pooling
+
+For production deployments, configure connection pooling to handle high traffic:
+
+### PlanetScale Connection Pooling
+
+PlanetScale automatically handles connection pooling. Use the connection string provided:
+
+```bash
+DATABASE_URL="mysql://username:password@host.connect.psdb.cloud/database?sslaccept=strict"
+```
+
+### RDS Proxy (AWS)
+
+For Amazon RDS, use RDS Proxy for connection pooling:
+
+1. Create an RDS Proxy in the AWS Console
+2. Configure target database
+3. Update connection string to use proxy endpoint:
+
+```bash
+DATABASE_URL="mysql://username:password@proxy-endpoint.region.rds.amazonaws.com:3306/dub"
+```
+
+### External Pooling (PgBouncer Alternative)
+
+For MySQL connection pooling outside of managed services, consider:
+
+- **ProxySQL** - MySQL-specific connection pooler
+- **MaxScale** - MariaDB connection pooler (MySQL compatible)
+
+## Performance Optimization
+
+### Indexes
+
+Dub's Prisma schema includes optimized indexes for common queries. Key indexes:
+
+```prisma
+model Link {
+  // ...
+  @@index([projectId])
+  @@index([domain])
+  @@index([url])
+  @@index([createdAt])
+  @@index([userId])
+}
+```
+
+### Query Performance
+
+Monitor slow queries using:
+
+```sql
+-- Enable slow query log
+SET GLOBAL slow_query_log = 'ON';
+SET GLOBAL long_query_time = 2;
+
+-- View slow queries
+SHOW VARIABLES LIKE 'slow_query%';
+```
+
+### Database Size Management
+
+For analytics data, Dub uses Tinybird instead of storing click events in MySQL, keeping the database size manageable.
+
+## Backup & Recovery
+
+### PlanetScale Backups
+
+PlanetScale provides automatic daily backups with point-in-time recovery:
+
+- Backups retained for 7-30 days depending on plan
+- Restore through PlanetScale dashboard
+- Test restores regularly
+
+### Manual Backups
+
+For self-managed databases:
+
+```bash
+# Create backup
+mysqldump -u username -p dub > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Restore from backup
+mysql -u username -p dub < backup_20260303_120000.sql
+```
+
+### Automated Backup Script
+
+```bash backup.sh
+#!/bin/bash
+BACKUP_DIR="/backups/mysql"
+DATABASE="dub"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+mkdir -p $BACKUP_DIR
+mysqldump -u dubuser -p$MYSQL_PASSWORD $DATABASE | gzip > $BACKUP_DIR/dub_$DATE.sql.gz
+
+# Keep only last 30 days
+find $BACKUP_DIR -name "dub_*.sql.gz" -mtime +30 -delete
+```
+
+Schedule with cron:
+
+```cron
+0 2 * * * /path/to/backup.sh
+```
+
+## Troubleshooting
+
+### Connection Issues
+
+**Error: "Can't connect to MySQL server"**
+
+```bash
+# Test connectivity
+mysql -h hostname -u username -p
+
+# Check if MySQL is running
+systemctl status mysql
+
+# Verify port is open
+telnet hostname 3306
+```
+
+### Schema Sync Issues
+
+**Error: "The table does not exist in the current database"**
+
+```bash
+# Regenerate Prisma client and push schema
+pnpm prisma:generate
+pnpm prisma:push
+```
+
+### Authentication Issues
+
+**Error: "Access denied for user"**
+
+```sql
+-- Verify user exists
+SELECT User, Host FROM mysql.user WHERE User = 'dubuser';
+
+-- Reset password
+ALTER USER 'dubuser'@'%' IDENTIFIED BY 'new_password';
+FLUSH PRIVILEGES;
+```
+
+### Max Connections Exceeded
+
+**Error: "Too many connections"**
+
+```sql
+-- Check current connections
+SHOW STATUS WHERE variable_name = 'Threads_connected';
+
+-- Increase max connections
+SET GLOBAL max_connections = 2000;
+```
+
+Make permanent by editing MySQL config:
+
+```ini
+[mysqld]
+max_connections = 2000
+```
+
+## Migration from Other Databases
+
+Dub is designed for MySQL. Migration from PostgreSQL or other databases requires schema conversion.
+
+<Warning>
+  Dub's Prisma schema is optimized for MySQL. Using other databases is not officially supported and may require significant code changes.
+</Warning>
+
+## Production Checklist
+
+- [ ] Database is MySQL 8.0 or higher
+- [ ] Connection pooling is configured
+- [ ] Backups are automated and tested
+- [ ] Monitoring is set up for performance and errors
+- [ ] Connection string uses SSL/TLS
+- [ ] Database credentials are stored securely
+- [ ] `max_connections` is set appropriately (minimum 1000)
+- [ ] Slow query log is enabled
+- [ ] Regular maintenance windows are scheduled
+- [ ] Disaster recovery plan is documented
+
+## Next Steps
+
+- [Configure Environment Variables](/self-hosting/environment-variables)
+- [Deploy to Production](/self-hosting/deployment)
+- [Return to Self-Hosting Guide](/self-hosting/guide)

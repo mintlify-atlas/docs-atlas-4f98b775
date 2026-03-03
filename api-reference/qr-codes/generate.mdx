@@ -1,0 +1,179 @@
+---
+title: Generate QR Code
+description: Retrieve a QR code for a link
+---
+
+## Endpoint
+
+<ParamField path="method" type="string">
+  GET
+</ParamField>
+
+<ParamField path="url" type="string">
+  https://api.dub.co/qr
+</ParamField>
+
+## Authentication
+
+This endpoint does not require authentication for basic usage. Authentication is required for:
+- Custom logos (paid plans only)
+- Hiding the default Dub logo (paid plans only)
+
+## Query Parameters
+
+<ParamField query="url" type="string" required>
+  The URL to generate a QR code for.
+</ParamField>
+
+<ParamField query="size" type="number" default="600">
+  The size of the QR code in pixels.
+</ParamField>
+
+<ParamField query="level" type="enum" default="L">
+  The level of error correction to use for the QR code.
+  
+  Options: `L`, `M`, `Q`, `H`
+  
+  - `L` - Low (7% error correction)
+  - `M` - Medium (15% error correction)
+  - `Q` - Quartile (25% error correction)
+  - `H` - High (30% error correction)
+</ParamField>
+
+<ParamField query="fgColor" type="string" default="#000000">
+  The foreground color of the QR code in hex format.
+</ParamField>
+
+<ParamField query="bgColor" type="string" default="#ffffff">
+  The background color of the QR code in hex format.
+</ParamField>
+
+<ParamField query="margin" type="number" default="4">
+  The size of the margin around the QR code.
+</ParamField>
+
+<ParamField query="logo" type="string">
+  The logo to include in the QR code. Can only be used with a paid plan on Dub.
+  
+  Requires authentication.
+</ParamField>
+
+<ParamField query="hideLogo" type="boolean" default="false">
+  Whether to hide the logo in the QR code. Can only be used with a paid plan on Dub.
+  
+  Requires authentication.
+</ParamField>
+
+## Response
+
+Returns a PNG image of the QR code.
+
+<ResponseField name="Content-Type" type="string">
+  `image/png`
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "https://api.dub.co/qr?url=https://dub.sh/example&size=600"
+```
+
+```bash cURL (with customization)
+curl -X GET "https://api.dub.co/qr?url=https://dub.sh/example&size=800&level=H&fgColor=%23000000&bgColor=%23ffffff&margin=4"
+```
+
+```bash cURL (with custom logo - requires auth)
+curl -X GET "https://api.dub.co/qr?url=https://dub.sh/example&logo=https://example.com/logo.png" \
+  -H "Authorization: Bearer DUB_API_KEY"
+```
+
+```typescript TypeScript SDK
+import { Dub } from 'dub';
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const qrCode = await dub.qr.get({
+  url: 'https://dub.sh/example',
+  size: 600,
+  level: 'H',
+  fgColor: '#000000',
+  bgColor: '#ffffff',
+});
+```
+
+```python Python SDK
+from dub import Dub
+
+dub = Dub(token=os.environ["DUB_API_KEY"])
+
+qr_code = dub.qr.get(
+    url="https://dub.sh/example",
+    size=600,
+    level="H",
+    fg_color="#000000",
+    bg_color="#ffffff"
+)
+```
+
+```go Go SDK
+import (
+    "context"
+    "github.com/dubinc/dub-go"
+    "github.com/dubinc/dub-go/models/operations"
+)
+
+client := dub.New(
+    dub.WithSecurity(os.Getenv("DUB_API_KEY")),
+)
+
+qrCode, err := client.QR.Get(context.Background(), &operations.GetQRCodeRequest{
+    URL: "https://dub.sh/example",
+    Size: dub.Int(600),
+    Level: dub.String("H"),
+    FgColor: dub.String("#000000"),
+    BgColor: dub.String("#ffffff"),
+})
+```
+
+```html HTML (direct image)
+<img src="https://api.dub.co/qr?url=https://dub.sh/example&size=600" alt="QR Code" />
+```
+
+</CodeGroup>
+
+## Usage Notes
+
+### Error Correction Levels
+
+Choose the appropriate error correction level based on your needs:
+
+- **L (Low)**: Use when the QR code will be displayed in clean environments
+- **M (Medium)**: Good balance for most use cases
+- **Q (Quartile)**: Better for QR codes that might be partially obscured
+- **H (High)**: Best for QR codes with logos or in challenging environments
+
+### Custom Logos
+
+When using a custom logo:
+- The logo will be centered in the QR code
+- Logo size is automatically set to 1/4 of the QR code size
+- Use higher error correction levels (Q or H) when including logos
+- Requires a paid Dub plan
+
+### Color Customization
+
+For best scanning results:
+- Ensure high contrast between foreground and background colors
+- Dark foreground on light background works best
+- Test the QR code with multiple scanning apps before deploying
+
+## CORS
+
+This endpoint supports Cross-Origin Resource Sharing (CORS) with the following headers:
+
+- `Access-Control-Allow-Origin: *`
+- `Access-Control-Allow-Methods: GET, OPTIONS`

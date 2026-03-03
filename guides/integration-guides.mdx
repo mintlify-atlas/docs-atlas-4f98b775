@@ -1,0 +1,645 @@
+---
+title: Integration Guides
+description: Step-by-step guides for integrating Dub with popular platforms and services including authentication providers, analytics tools, and payment processors
+---
+
+Integrate Dub with your existing tech stack to automatically track conversions across your platform. These guides cover authentication providers, analytics platforms, payment processors, and more.
+
+## Authentication Providers
+
+Track user signups as lead conversions by integrating with your authentication provider.
+
+### Clerk
+
+<Accordion title="Integrate Dub with Clerk authentication">
+  Configure Clerk to track lead conversion events when users sign up.
+
+  <Steps>
+    <Step title="Add Environment Variables">
+      ```bash
+      # Get from https://dashboard.clerk.com/apps/new
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_publishable_key
+      CLERK_SECRET_KEY=your_secret_key
+
+      # Get from https://d.to/tokens
+      DUB_API_KEY=your_api_key
+      ```
+    </Step>
+
+    <Step title="Add Custom Claim to Session Token">
+      In Clerk dashboard, add this custom claim:
+
+      ```json
+      {
+        "metadata": "{{user.public_metadata}}"
+      }
+      ```
+    </Step>
+
+    <Step title="Create DubAnalytics Component">
+      ```typescript
+      "use client";
+
+      import { trackLead } from "@/actions/track-lead";
+      import { useUser } from "@clerk/nextjs";
+      import { Analytics } from "@dub/analytics/react";
+      import { useEffect } from "react";
+
+      export function DubAnalytics() {
+        const { user } = useUser();
+
+        useEffect(() => {
+          if (!user || user.publicMetadata.dubClickId) return;
+
+          trackLead({
+            id: user.id,
+            name: user.fullName!,
+            email: user.primaryEmailAddress?.emailAddress,
+            avatar: user.imageUrl,
+          }).then(async (res) => {
+            if (res.ok) await user.reload();
+            else console.error(res.error);
+          });
+        }, [user]);
+
+        return <Analytics />;
+      }
+      ```
+    </Step>
+
+    <Step title="Implement trackLead Server Action">
+      ```typescript
+      "use server";
+
+      import { dub } from "@/lib/dub";
+      import { clerkClient } from "@clerk/nextjs/server";
+      import { cookies } from "next/headers";
+
+      export async function trackLead({ id, name, email, avatar }) {
+        try {
+          const cookieStore = await cookies();
+          const dubId = cookieStore.get("dub_id")?.value;
+
+          if (dubId) {
+            await dub.track.lead({
+              clickId: dubId,
+              eventName: "Sign Up",
+              customerExternalId: id,
+              customerName: name,
+              customerEmail: email,
+              customerAvatar: avatar,
+            });
+
+            cookieStore.set("dub_id", "", { expires: new Date(0) });
+          }
+
+          const clerk = await clerkClient();
+          await clerk.users.updateUser(id, {
+            publicMetadata: { dubClickId: dubId || "n/a" },
+          });
+
+          return { ok: true };
+        } catch (error) {
+          return { ok: false, error: error.message };
+        }
+      }
+      ```
+    </Step>
+  </Steps>
+</Accordion>
+
+### Supabase
+
+<Accordion title="Integrate Dub with Supabase Auth">
+  Track leads in the Supabase auth callback function.
+
+  ```typescript
+  // app/api/auth/callback/route.ts
+  import { dub } from "@/lib/dub";
+  import { createClient } from "@/lib/supabase/server";
+  import { cookies } from "next/headers";
+  import { NextResponse } from "next/server";
+
+  export async function GET(request: Request) {
+    const { searchParams, origin } = new URL(request.url);
+    const code = searchParams.get("code");
+    const next = searchParams.get("next") ?? "/";
+
+    if (code) {
+      const supabase = createClient(cookies());
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (!error) {
+        const { user } = data;
+        const dub_id = cookies().get("dub_id")?.value;
+        
+        // User created in last 10 minutes is considered new
+        const isNewUser =
+          new Date(user.created_at) > new Date(Date.now() - 10 * 60 * 1000);
+
+        if (dub_id && isNewUser) {
+          await dub.track.lead({
+            clickId: dub_id,
+            eventName: "Sign Up",
+            customerExternalId: user.id,
+            customerName: user.user_metadata.name,
+            customerEmail: user.email,
+            customerAvatar: user.user_metadata.avatar_url,
+          });
+
+          cookies().delete("dub_id");
+        }
+
+        return NextResponse.redirect(`${origin}${next}`);
+      }
+    }
+
+    return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  }
+  ```
+</Accordion>
+
+### Auth0
+
+<Accordion title="Integrate Dub with Auth0">
+  Track lead events after Auth0 authentication completes.
+
+  Similar to other auth providers, read the `dub_id` cookie in your Auth0 callback and track the lead event server-side.
+</Accordion>
+
+### Next-Auth
+
+<Accordion title="Integrate Dub with Next-Auth">
+  Track leads in your Next-Auth callback configuration.
+
+  Use the `signIn` callback to track leads when users authenticate.
+</Accordion>
+
+### Appwrite
+
+<Accordion title="Integrate Dub with Appwrite">
+  Configure Appwrite to track lead conversions during signup.
+
+  <Steps>
+    <Step title="Install Dependencies">
+      ```bash
+      npm install node-appwrite @dub/analytics
+      ```
+    </Step>
+
+    <Step title="Set Environment Variables">
+      ```bash
+      NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+      NEXT_PUBLIC_APPWRITE_PROJECT=<APPWRITE_PROJECT_ID>
+      NEXT_APPWRITE_KEY=<APPWRITE_API_KEY>
+      NEXT_DUB_API_KEY=<DUB_API_KEY>
+      ```
+    </Step>
+
+    <Step title="Create Dub Lead Tracking Function">
+      ```typescript
+      import { Dub } from "dub";
+      import type { Models } from "node-appwrite";
+
+      const dub = new Dub({
+        token: process.env.NEXT_DUB_API_KEY,
+      });
+
+      export function addDubLead(
+        user: Models.User<Models.Preferences>,
+        dub_id: string,
+      ) {
+        dub.track.lead({
+          clickId: dub_id,
+          eventName: "Sign Up",
+          customerExternalId: user.$id,
+          customerName: user.name,
+          customerEmail: user.email,
+        });
+      }
+      ```
+    </Step>
+
+    <Step title="Track Leads on Signup">
+      ```typescript
+      import { addDubLead } from "@/lib/server/dub";
+      import { cookies } from "next/headers";
+
+      async function signUpWithEmail(formData: FormData) {
+        "use server";
+
+        const email = formData.get("email");
+        const password = formData.get("password");
+        const name = formData.get("name");
+
+        const { account } = await createAdminClient();
+        const user = await account.create(ID.unique(), email, password, name);
+        const session = await account.createEmailPasswordSession(email, password);
+
+        (await cookies()).set("my-custom-session", session.secret, {
+          path: "/",
+          httpOnly: true,
+          sameSite: "strict",
+          secure: true,
+        });
+
+        // Track lead if dub_id exists
+        const dub_id = (await cookies()).get("dub_id")?.value;
+        if (dub_id) {
+          addDubLead(user, dub_id);
+          (await cookies()).delete("dub_id");
+        }
+
+        redirect("/auth/success");
+      }
+      ```
+    </Step>
+  </Steps>
+</Accordion>
+
+### Better Auth
+
+<Accordion title="Integrate Dub with Better Auth">
+  Track lead conversions with Better Auth in your Next.js app.
+</Accordion>
+
+## Analytics & Tag Managers
+
+### Google Tag Manager
+
+<Accordion title="Install Dub Analytics via Google Tag Manager">
+  <Steps>
+    <Step title="Create Analytics Tag">
+      1. Navigate to GTM workspace
+      2. Click Tags > New
+      3. Select Custom HTML tag type
+    </Step>
+
+    <Step title="Add Dub Script">
+      ```html
+      <script>
+        (function (c, n) {
+          c[n] =
+            c[n] ||
+            function () {
+              (c[n].q = c[n].q || []).push(arguments);
+            };
+          var methods = ["trackClick", "trackLead", "trackSale"];
+          for (var i = 0; i < methods.length; i++) {
+            (function (method) {
+              c[n][method] = function () {
+                var args = Array.prototype.slice.call(arguments);
+                args.unshift(method);
+                c[n].apply(null, args);
+              };
+            })(methods[i]);
+          }
+          var s = document.createElement("script");
+          s.defer = 1;
+          s.src = "https://www.dubcdn.com/analytics/script.js";
+          document.head.appendChild(s);
+        })(window, "dubAnalytics");
+      </script>
+      ```
+    </Step>
+
+    <Step title="Configure Trigger">
+      - Set trigger to "All Pages"
+      - Tag will fire on every page load
+    </Step>
+
+    <Step title="Save and Publish">
+      - Name tag "Dub Analytics"
+      - Save changes
+      - Submit and publish to activate
+    </Step>
+  </Steps>
+</Accordion>
+
+<Accordion title="Track Sales with GTM">
+  Create a variable to read the `dub_id` cookie:
+
+  <Steps>
+    <Step title="Create Cookie Variable">
+      - Go to Variables > New
+      - Variable Type: 1st Party Cookie
+      - Cookie Name: `dub_id`
+      - Name: "Dub ID Cookie"
+    </Step>
+
+    <Step title="Create Sale Tracking Tag">
+      For order confirmation page:
+
+      ```html
+      <script>
+        (function () {
+          var params = new URLSearchParams(window.location.search);
+          var customerId = params.get("customer_id");
+          var amount = params.get("amount");
+          var invoiceId = params.get("invoice_id");
+          var clickId = {{Dub ID Cookie}} || "";
+
+          if (customerId && amount && clickId) {
+            dubAnalytics.trackSale({
+              eventName: "Purchase",
+              customerExternalId: customerId,
+              amount: parseInt(amount),
+              invoiceId: invoiceId || undefined,
+              currency: "usd",
+              paymentProcessor: "stripe",
+              clickId: clickId,
+            });
+          }
+        })();
+      </script>
+      ```
+    </Step>
+
+    <Step title="Set Page View Trigger">
+      Fire on pages matching:
+      - Page URL contains `/order-confirmation`
+      - Or Page Path equals `/checkout/success`
+    </Step>
+  </Steps>
+</Accordion>
+
+### Segment
+
+<Accordion title="Track conversions via Segment">
+  Forward Segment events to Dub for conversion tracking.
+
+  Use Segment's HTTP API destination to send lead and sale events to Dub's tracking endpoints.
+</Accordion>
+
+## Payment Processors
+
+### Stripe Checkout
+
+<Accordion title="Track Stripe Checkout conversions">
+  Associate Stripe customers with Dub attribution by passing the customer ID in checkout metadata.
+
+  ```typescript
+  import { stripe } from "@/lib/stripe";
+
+  const session = await stripe.checkout.sessions.create({
+    customer_email: user.email,
+    success_url: "https://app.example.com/success",
+    line_items: [{ price: priceId, quantity: 1 }],
+    mode: "subscription",
+    client_reference_id: user.teamId,
+    metadata: {
+      dubCustomerExternalId: user.id, // Your internal user ID
+    },
+  });
+  ```
+
+  <Info>
+  Dub listens for Stripe webhook events and automatically tracks sales when checkout completes.
+  </Info>
+
+  **How it works:**
+  1. User is tracked as a lead with `customerExternalId`
+  2. Stripe checkout includes same ID in metadata
+  3. Dub receives Stripe webhook when payment succeeds
+  4. Sale is attributed to original click via customer ID
+</Accordion>
+
+### Stripe Payment Links
+
+<Accordion title="Use Stripe Payment Links with Dub">
+  Similar to Checkout, configure Payment Links to include customer metadata for attribution.
+</Accordion>
+
+### Stripe Customer Objects
+
+<Accordion title="Associate Stripe Customers">
+  Link Stripe customer objects to Dub customers for automatic sale attribution.
+</Accordion>
+
+## E-commerce Platforms
+
+### Shopify
+
+<Accordion title="Install Dub on Shopify">
+  <Steps>
+    <Step title="Install Shopify App">
+      Install the [Dub Shopify App](https://d.to/shopify/app) from the Shopify App Store.
+    </Step>
+
+    <Step title="Activate Analytics Script">
+      1. Go to Shopify Admin > Online Store > Themes
+      2. Click Customize on your active theme
+      3. Select App embeds tab
+      4. Find "Dub Analytics Script"
+      5. Toggle to activate
+    </Step>
+
+    <Step title="Verify Installation">
+      - Visit your store
+      - Check browser console for Dub analytics script
+      - Test a purchase to verify tracking
+    </Step>
+  </Steps>
+
+  <Info>
+  Sales are automatically tracked when customers complete checkout. No additional code required.
+  </Info>
+</Accordion>
+
+### Webflow
+
+<Accordion title="Add Dub Analytics to Webflow">
+  Add the Dub analytics script to your Webflow site's custom code section.
+</Accordion>
+
+### WordPress
+
+<Accordion title="Install Dub on WordPress">
+  Add the Dub analytics script via a custom HTML block or theme footer.
+</Accordion>
+
+### Framer
+
+<Accordion title="Add Dub to Framer Sites">
+  Use Framer's custom code feature to add the Dub analytics script to all pages.
+</Accordion>
+
+## SDK & Manual Integration
+
+### React
+
+<Accordion title="Use Dub with React">
+  <Steps>
+    <Step title="Install Package">
+      ```bash
+      npm install @dub/analytics
+      ```
+    </Step>
+
+    <Step title="Add Analytics Component">
+      ```jsx
+      import { Analytics } from '@dub/analytics/react';
+
+      export default function RootLayout({ children }) {
+        return (
+          <html lang="en">
+            <body>{children}</body>
+            <Analytics />
+          </html>
+        );
+      }
+      ```
+    </Step>
+  </Steps>
+</Accordion>
+
+### REST API
+
+<Accordion title="Track conversions via REST API">
+  <Tabs>
+    <Tab title="Track Lead">
+      ```bash
+      curl -X POST https://api.dub.co/track/lead \
+        -H "Authorization: Bearer dub_xxxxxx" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "clickId": "rLnWe1uz9t282v7g",
+          "eventName": "Sign Up",
+          "customerExternalId": "user_123",
+          "customerName": "John Doe",
+          "customerEmail": "john@example.com"
+        }'
+      ```
+    </Tab>
+
+    <Tab title="Track Sale">
+      ```bash
+      curl -X POST https://api.dub.co/track/sale \
+        -H "Authorization: Bearer dub_xxxxxx" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "customerExternalId": "user_123",
+          "amount": 5000,
+          "currency": "usd",
+          "paymentProcessor": "stripe",
+          "eventName": "Purchase"
+        }'
+      ```
+    </Tab>
+  </Tabs>
+</Accordion>
+
+### Server-Side SDKs
+
+<Accordion title="Use Dub SDKs">
+  Dub provides SDKs for multiple languages:
+
+  <Tabs>
+    <Tab title="TypeScript">
+      ```typescript
+      import { Dub } from 'dub';
+
+      const dub = new Dub({
+        token: process.env.DUB_API_KEY,
+      });
+
+      await dub.track.lead({
+        clickId: 'rLnWe1uz9t282v7g',
+        eventName: 'Sign Up',
+        customerExternalId: 'user_123',
+      });
+      ```
+    </Tab>
+
+    <Tab title="Python">
+      ```python
+      from dub import Dub
+
+      dub = Dub(token=os.environ['DUB_API_KEY'])
+
+      dub.track.lead(
+        click_id='rLnWe1uz9t282v7g',
+        event_name='Sign Up',
+        customer_external_id='user_123'
+      )
+      ```
+    </Tab>
+
+    <Tab title="PHP">
+      ```php
+      use Dub\Dub;
+
+      $dub = new Dub([
+        'token' => getenv('DUB_API_KEY')
+      ]);
+
+      $dub->track->lead([
+        'clickId' => 'rLnWe1uz9t282v7g',
+        'eventName' => 'Sign Up',
+        'customerExternalId' => 'user_123'
+      ]);
+      ```
+    </Tab>
+
+    <Tab title="Ruby">
+      ```ruby
+      require 'dub'
+
+      dub = Dub::Client.new(token: ENV['DUB_API_KEY'])
+
+      dub.track.lead(
+        click_id: 'rLnWe1uz9t282v7g',
+        event_name: 'Sign Up',
+        customer_external_id: 'user_123'
+      )
+      ```
+    </Tab>
+
+    <Tab title="Go">
+      ```go
+      import "github.com/dubinc/dub-go"
+
+      client := dub.New(dub.WithToken(os.Getenv("DUB_API_KEY")))
+
+      client.Track.Lead(context.Background(), &dub.TrackLeadRequest{
+        ClickID: "rLnWe1uz9t282v7g",
+        EventName: "Sign Up",
+        CustomerExternalID: "user_123",
+      })
+      ```
+    </Tab>
+  </Tabs>
+</Accordion>
+
+## Best Practices
+
+<Accordion title="Choose the Right Integration Method">
+  - **Authentication providers**: Track leads at signup
+  - **Payment processors**: Automatic sale attribution via metadata
+  - **E-commerce platforms**: Use official apps when available
+  - **Custom apps**: Use SDKs for type safety and better DX
+</Accordion>
+
+<Accordion title="Test in Development First">
+  Always test integrations in development:
+  1. Use test API keys
+  2. Verify cookie setting
+  3. Confirm events appear in dashboard
+  4. Test end-to-end attribution flow
+</Accordion>
+
+<Accordion title="Monitor Integration Health">
+  - Check conversion rates regularly
+  - Set up alerts for attribution drops
+  - Verify webhook delivery (for payment processors)
+  - Test after deploying changes
+</Accordion>
+
+<Accordion title="Keep Customer IDs Consistent">
+  Use the same `customerExternalId` across:
+  - Lead tracking
+  - Sale tracking  
+  - Payment processor metadata
+  
+  This ensures proper attribution throughout the funnel.
+</Accordion>

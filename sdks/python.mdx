@@ -1,0 +1,186 @@
+---
+title: Python SDK
+description: Official Python SDK for Dub's link management platform
+---
+
+The Dub Python SDK provides a pythonic interface to interact with the Dub API from Python applications.
+
+## Installation
+
+Install the SDK using pip:
+
+```bash
+pip install dub
+```
+
+## Authentication
+
+Initialize the SDK with your API key from the [Dub Dashboard](https://app.dub.co/settings/tokens):
+
+```python
+from dub import Dub
+import os
+
+dub = Dub(
+    token=os.environ.get("DUB_API_KEY")
+)
+```
+
+<Note>
+  Store your API key securely in environment variables. Never commit it to version control.
+</Note>
+
+## Quick Start
+
+### Create a Short Link
+
+```python
+from dub import Dub
+import os
+
+dub = Dub(token=os.environ.get("DUB_API_KEY"))
+
+link = dub.links.create(
+    url="https://example.com/long-url",
+    domain="your-domain.com",
+    key="custom-key"
+)
+
+print(link.short_link)  # https://your-domain.com/custom-key
+```
+
+### List Links
+
+Retrieve links from your workspace with optional filtering:
+
+```python
+links = dub.links.list(
+    search="example",
+    page_size=10
+)
+
+for link in links.result:
+    print(f"{link.short_link} -> {link.url}")
+    print(f"Clicks: {link.clicks}")
+    print(f"Created: {link.created_at}")
+```
+
+### Update a Link
+
+```python
+updated_link = dub.links.update(
+    link_id="clx1...",
+    url="https://example.com/new-destination"
+)
+```
+
+### Delete a Link
+
+```python
+dub.links.delete(link_id="clx1...")
+```
+
+## Domain Management
+
+### List Domains
+
+```python
+domains = dub.domains.list()
+
+for domain in domains.result:
+    print(domain.slug)
+```
+
+### Get Domain Details
+
+```python
+domain = dub.domains.get(slug="your-domain.com")
+print(f"Domain: {domain.slug}")
+print(f"Verified: {domain.verified}")
+```
+
+## Customer Tracking
+
+### List Customers
+
+Retrieve customers using their external ID:
+
+```python
+customers = dub.customers.list(
+    external_id="user_123",
+    include_expanded_fields=True
+)
+
+customer = customers[0] if len(customers) > 0 else None
+```
+
+## Conversion Tracking
+
+### Track Lead Conversions
+
+```python
+dub.track.lead(
+    click_id=dub_id,
+    event_name="Sign Up",
+    customer_external_id="user_123",
+    customer_name="John Doe",
+    customer_email="john@example.com",
+    customer_avatar="https://example.com/avatar.jpg"
+)
+```
+
+### Track Sale Conversions
+
+```python
+dub.track.sale(
+    click_id=dub_id,
+    event_name="Purchase",
+    customer_external_id="user_123",
+    amount=99.99,
+    currency="USD",
+    metadata={
+        "order_id": "order_456",
+        "product_id": "prod_789"
+    }
+)
+```
+
+## Error Handling
+
+Handle exceptions when making API calls:
+
+```python
+try:
+    link = dub.links.create(
+        url="https://example.com",
+        domain="your-domain.com"
+    )
+except Exception as e:
+    print(f"Failed to create link: {e}")
+```
+
+## Type Hints
+
+The SDK supports Python type hints for better IDE integration:
+
+```python
+from dub import Dub
+from dub.models import Link, Domain
+
+dub = Dub(token=os.environ.get("DUB_API_KEY"))
+
+link: Link = dub.links.create(
+    url="https://example.com"
+)
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the complete API documentation
+  </Card>
+  <Card title="Client-Side Tracking" icon="chart-line" href="/sdks/client-side/overview">
+    Add analytics tracking to your website
+  </Card>
+</CardGroup>

@@ -1,0 +1,555 @@
+---
+title: Conversion Tracking
+description: Track leads, sales, and revenue from your short links with powerful conversion tracking and attribution.
+---
+
+## Overview
+
+Conversion tracking allows you to measure the real business impact of your short links by tracking leads, sales, revenue, and customer journeys. Understand which links drive the most valuable actions and optimize your marketing accordingly.
+
+<Info>
+Conversion tracking is available on Business plans and above.
+</Info>
+
+## Enabling Conversion Tracking
+
+### For New Links
+
+<Steps>
+  <Step title="Create Link">
+    Open the link creation modal.
+  </Step>
+  
+  <Step title="Toggle Conversion Tracking">
+    Enable the "Conversion Tracking" toggle in the link builder.
+  </Step>
+  
+  <Step title="Save Link">
+    Create the link with conversion tracking enabled.
+  </Step>
+</Steps>
+
+<Tabs>
+  <Tab title="Dashboard">
+    The conversion tracking toggle appears in the link builder with a "New" badge. Click to enable.
+    
+    Keyboard shortcut: Press **C** to quickly toggle conversion tracking.
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    const link = await fetch('/api/links', {
+      method: 'POST',
+      body: JSON.stringify({
+        domain: 'dub.sh',
+        key: 'product',
+        url: 'https://example.com/product',
+        trackConversion: true
+      })
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### For Existing Links
+
+Enable conversion tracking on existing links:
+
+<Tabs>
+  <Tab title="Single Link">
+    1. Open the link editor
+    2. Toggle "Conversion Tracking" on
+    3. Save changes
+  </Tab>
+  
+  <Tab title="Bulk Update">
+    1. Select multiple links
+    2. Click "Bulk Edit"
+    3. Choose "Add conversion tracking"
+    4. Apply to selected links
+  </Tab>
+  
+  <Tab title="API">
+    ```typescript
+    // Update single link
+    await fetch('/api/links/link_123', {
+      method: 'PATCH',
+      body: JSON.stringify({ trackConversion: true })
+    });
+    
+    // Bulk update
+    await fetch('/api/links/bulk?workspaceId=ws_123', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        linkIds: ['link_123', 'link_456'],
+        data: { trackConversion: true }
+      })
+    });
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+Conversion tracking requires Business plan or above. Links with A/B testing enabled must have conversion tracking on.
+</Note>
+
+## Conversion Events
+
+### Event Types
+
+Dub tracks three types of conversion events:
+
+<CardGroup cols={3}>
+  <Card title="Leads" icon="user-plus">
+    A user signs up, submits a form, or becomes a qualified lead
+  </Card>
+  
+  <Card title="Sales" icon="dollar-sign">
+    A conversion results in a purchase or paid transaction
+  </Card>
+  
+  <Card title="Conversions" icon="chart-line">
+    When a lead converts to a customer (lead → sale)
+  </Card>
+</CardGroup>
+
+### Recording Lead Events
+
+Track when users become leads:
+
+```typescript
+// Client-side tracking
+await fetch('https://api.dub.co/track/lead', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    clickId: 'click_abc123', // From dub.co/click query parameter
+    eventName: 'Sign Up',
+    customerId: 'user_456',
+    customerName: 'John Doe',
+    customerEmail: 'john@example.com',
+    customerAvatar: 'https://example.com/avatar.jpg',
+    metadata: {
+      plan: 'pro',
+      source: 'organic'
+    }
+  })
+});
+```
+
+The `clickId` comes from the URL query parameter when users click your short link.
+
+### Recording Sale Events
+
+Track purchases and revenue:
+
+```typescript
+// Server-side tracking (recommended for security)
+await fetch('https://api.dub.co/track/sale', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    customerId: 'user_456',
+    amount: 9900, // Amount in cents ($99.00)
+    currency: 'usd',
+    paymentProcessor: 'stripe',
+    invoiceId: 'inv_abc123',
+    metadata: {
+      product: 'Pro Plan',
+      billingCycle: 'monthly'
+    }
+  })
+});
+```
+
+<Warning>
+Always record sales server-side to prevent fraud. Never expose API keys in client-side code.
+</Warning>
+
+## Customer Attribution
+
+### First-Touch Attribution
+
+Dub automatically attributes conversions to the first link a customer clicked:
+
+1. User clicks your short link → Click ID stored
+2. User signs up → Lead event with Click ID
+3. User purchases → Sale attributed to original link
+
+```typescript
+// Lead event stores the attribution
+await fetch('https://api.dub.co/track/lead', {
+  method: 'POST',
+  body: JSON.stringify({
+    clickId: 'click_abc123',
+    customerId: 'user_456'
+  })
+});
+
+// Later: Sale automatically attributed
+await fetch('https://api.dub.co/track/sale', {
+  method: 'POST',
+  body: JSON.stringify({
+    customerId: 'user_456', // Links to the original click
+    amount: 9900
+  })
+});
+```
+
+### Multi-Touch Attribution
+
+Track the full customer journey:
+
+```typescript
+// First touch - awareness
+Click link A → clickId: click_001
+
+// Second touch - consideration
+Click link B → clickId: click_002
+
+// Third touch - conversion
+Click link C → clickId: click_003 (used for lead event)
+
+// All touches are tracked and visible in analytics
+```
+
+<Info>
+The lead event determines attribution, but all clicks from a customer are tracked.
+</Info>
+
+## Conversion Analytics
+
+### View Conversion Metrics
+
+Access conversion data in analytics:
+
+```typescript
+// Get lead events
+const leads = await fetch(
+  '/api/analytics?event=leads&interval=30d'
+);
+
+// Get sales
+const sales = await fetch(
+  '/api/analytics?event=sales&interval=30d'
+);
+
+// Get conversion rate
+const conversions = await fetch(
+  '/api/analytics?event=composite&interval=30d'
+);
+// Returns: clicks, leads, sales, saleAmount
+```
+
+### Link Performance
+
+Each link tracks conversion statistics:
+
+```typescript
+const link = await fetch('/api/links/link_123');
+const data = await link.json();
+
+console.log({
+  clicks: data.clicks,
+  leads: data.leads,
+  conversions: data.conversions,
+  sales: data.sales,
+  saleAmount: data.saleAmount, // in cents
+  lastLeadAt: data.lastLeadAt,
+  lastConversionAt: data.lastConversionAt
+});
+```
+
+### Time Series Analysis
+
+Track conversions over time:
+
+```typescript
+// Daily conversion timeline
+const timeline = await fetch(
+  '/api/analytics?' +
+  'event=sales&' +
+  'groupBy=timeseries&' +
+  'interval=30d&' +
+  'granularity=day'
+);
+
+// Compare clicks vs conversions
+const funnel = await fetch(
+  '/api/analytics?' +
+  'event=composite&' +
+  'groupBy=timeseries&' +
+  'interval=7d'
+);
+```
+
+## Revenue Tracking
+
+### Sale Amount Tracking
+
+Track total revenue generated:
+
+```typescript
+// Get total revenue for a link
+const revenue = await fetch(
+  '/api/analytics?' +
+  'event=sales&' +
+  'linkId=link_123&' +
+  'interval=all'
+);
+
+const { saleAmount } = await revenue.json();
+console.log('Total revenue:', saleAmount / 100); // Convert cents to dollars
+```
+
+### New vs Recurring Sales
+
+Differentiate between new and recurring revenue:
+
+```typescript
+// Track new customer sales
+const newSales = await fetch(
+  '/api/analytics?event=sales&saleType=new&interval=30d'
+);
+
+// Track recurring revenue
+const recurring = await fetch(
+  '/api/analytics?event=sales&saleType=recurring&interval=30d'
+);
+```
+
+<Info>
+A sale is "new" if it's the customer's first purchase. Subsequent purchases are "recurring".
+</Info>
+
+## Customer Data
+
+### Customer Information
+
+Store rich customer data with conversions:
+
+```typescript
+await fetch('https://api.dub.co/track/lead', {
+  method: 'POST',
+  body: JSON.stringify({
+    clickId: 'click_abc123',
+    customerId: 'user_456',
+    customerName: 'Sarah Smith',
+    customerEmail: 'sarah@example.com',
+    customerAvatar: 'https://example.com/avatars/sarah.jpg',
+    metadata: {
+      company: 'Acme Corp',
+      industry: 'SaaS',
+      employees: '50-100',
+      source: 'linkedin',
+      campaign: 'Q1-2024'
+    }
+  })
+});
+```
+
+### Customer Metadata
+
+Store custom metadata for detailed analysis:
+
+```typescript
+// Flexible metadata structure
+metadata: {
+  // Campaign tracking
+  utm_source: 'twitter',
+  utm_campaign: 'launch',
+  
+  // Product info
+  product_id: 'prod_123',
+  plan: 'business',
+  
+  // Qualification data
+  lead_score: 85,
+  industry: 'technology',
+  
+  // Custom fields
+  referral_code: 'REF123',
+  promo_code: 'SAVE20'
+}
+```
+
+### Query Customer Events
+
+Search conversions by metadata:
+
+```typescript
+// Find leads from specific campaign
+const campaignLeads = await fetch(
+  "/api/events?" +
+  "event=leads&" +
+  "query=metadata['utm_campaign']:'launch'"
+);
+
+// Find high-value sales
+const highValue = await fetch(
+  "/api/events?" +
+  "event=sales&" +
+  "query=metadata['plan']:'enterprise'"
+);
+```
+
+## Integration Examples
+
+### Next.js Integration
+
+```typescript
+// app/api/signup/route.ts
+export async function POST(req: Request) {
+  const { email, name } = await req.json();
+  
+  // Get click ID from session/cookie
+  const clickId = req.cookies.get('dub.co/click')?.value;
+  
+  // Create user in your database
+  const user = await createUser({ email, name });
+  
+  // Track lead event
+  if (clickId) {
+    await fetch('https://api.dub.co/track/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clickId,
+        customerId: user.id,
+        customerEmail: email,
+        customerName: name
+      })
+    });
+  }
+  
+  return Response.json({ success: true });
+}
+```
+
+### Stripe Integration
+
+```typescript
+// Webhook handler for Stripe payments
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+export async function POST(req: Request) {
+  const event = await stripe.webhooks.constructEvent(
+    await req.text(),
+    req.headers.get('stripe-signature'),
+    process.env.STRIPE_WEBHOOK_SECRET
+  );
+  
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    
+    // Track sale event
+    await fetch('https://api.dub.co/track/sale', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.DUB_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        customerId: session.client_reference_id,
+        amount: session.amount_total,
+        currency: session.currency,
+        paymentProcessor: 'stripe',
+        invoiceId: session.invoice,
+        metadata: {
+          plan: session.metadata.plan,
+          interval: session.metadata.interval
+        }
+      })
+    });
+  }
+  
+  return Response.json({ received: true });
+}
+```
+
+## Conversion Funnel Analysis
+
+Analyze your conversion funnel:
+
+```typescript
+// Get funnel metrics
+const funnel = await fetch(
+  '/api/analytics?event=composite&linkId=link_123&interval=30d'
+);
+
+const { clicks, leads, sales } = await funnel.json();
+
+const clickToLeadRate = (leads / clicks) * 100;
+const leadToSaleRate = (sales / leads) * 100;
+const clickToSaleRate = (sales / clicks) * 100;
+
+console.log({
+  clickToLeadRate: `${clickToLeadRate.toFixed(2)}%`,
+  leadToSaleRate: `${leadToSaleRate.toFixed(2)}%`,
+  clickToSaleRate: `${clickToSaleRate.toFixed(2)}%`
+});
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Enable Workspace-Wide" icon="toggle-on">
+    Turn on conversion tracking by default for all new links in your workspace settings
+  </Card>
+  
+  <Card title="Track Server-Side" icon="server">
+    Always record sale events server-side to ensure accuracy and prevent fraud
+  </Card>
+  
+  <Card title="Use Unique Customer IDs" icon="fingerprint">
+    Maintain consistent customer IDs across lead and sale events for accurate attribution
+  </Card>
+  
+  <Card title="Include Rich Metadata" icon="database">
+    Add detailed metadata to enable powerful filtering and analysis
+  </Card>
+  
+  <Card title="Monitor Conversion Rates" icon="chart-line">
+    Regularly review click-to-lead and lead-to-sale rates to optimize performance
+  </Card>
+  
+  <Card title="Test Attribution" icon="check-circle">
+    Test the full flow in development to ensure proper event tracking
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### Conversions Not Tracking
+
+<Steps>
+  <Step title="Verify Tracking Enabled">
+    Confirm `trackConversion: true` on the link.
+  </Step>
+  
+  <Step title="Check Click ID">
+    Ensure the `clickId` is being captured from the URL and passed to lead events.
+  </Step>
+  
+  <Step title="Validate Customer ID">
+    Use the same `customerId` for both lead and sale events.
+  </Step>
+  
+  <Step title="Review API Responses">
+    Check for error responses when recording events.
+  </Step>
+</Steps>
+
+## API Reference
+
+For detailed API documentation:
+
+- [Track Lead Event](/api-reference/track/lead)
+- [Track Sale Event](/api-reference/track/sale)
+- [Get Analytics](/api-reference/analytics/retrieve)
+- [List Events](/api-reference/events/list)

@@ -1,0 +1,238 @@
+---
+title: Track a Lead
+description: Track a lead conversion event for a short link
+---
+
+## Endpoint
+
+<ParamField path="method" type="string">
+  POST
+</ParamField>
+
+<ParamField path="url" type="string">
+  https://api.dub.co/track/lead
+</ParamField>
+
+## Authentication
+
+This endpoint requires authentication using a Bearer token.
+
+```bash
+Authorization: Bearer DUB_API_KEY
+```
+
+## Request Body
+
+<ParamField body="clickId" type="string" required>
+  The unique ID of the click that the lead conversion event is attributed to. You can read this value from `dub_id` cookie. 
+  
+  For deferred lead tracking: If an empty string is provided, Dub will try to find an existing customer with the provided `customerExternalId` and use the `clickId` from the customer if found.
+</ParamField>
+
+<ParamField body="eventName" type="string" required>
+  The name of the lead event to track. Can also be used as a unique identifier to associate a given lead event for a customer for a subsequent sale event (via the `leadEventName` prop in `/track/sale`).
+  
+  Maximum length: 255 characters
+  
+  Example: `Sign up`
+</ParamField>
+
+<ParamField body="customerExternalId" type="string" required>
+  The unique ID of the customer in your system. Will be used to identify and attribute all future events to this customer.
+  
+  Maximum length: 100 characters
+</ParamField>
+
+<ParamField body="customerName" type="string">
+  The name of the customer. If not passed, a random name will be generated (e.g. "Big Red Caribou").
+  
+  Maximum length: 100 characters
+</ParamField>
+
+<ParamField body="customerEmail" type="string">
+  The email address of the customer.
+  
+  Maximum length: 100 characters
+</ParamField>
+
+<ParamField body="customerAvatar" type="string">
+  The avatar URL of the customer.
+</ParamField>
+
+<ParamField body="mode" type="enum" default="async">
+  The mode to use for tracking the lead event.
+  
+  - `async` - Will not block the request
+  - `wait` - Will block the request until the lead event is fully recorded in Dub
+  - `deferred` - Will defer the lead event creation to a subsequent request
+</ParamField>
+
+<ParamField body="eventQuantity" type="number">
+  The numerical value associated with this lead event (e.g., number of provisioned seats in a free trial). If defined as N, the lead event will be tracked N times.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Additional metadata to be stored with the lead event. Max 10,000 characters when stringified.
+</ParamField>
+
+## Response
+
+<ResponseField name="click" type="object">
+  <ResponseField name="id" type="string">
+    The unique ID of the click event
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="link" type="object | null">
+  The link information associated with the lead event
+  
+  <ResponseField name="id" type="string">
+    The unique ID of the link
+  </ResponseField>
+  
+  <ResponseField name="domain" type="string">
+    The domain of the short link
+  </ResponseField>
+  
+  <ResponseField name="key" type="string">
+    The key (slug) of the short link
+  </ResponseField>
+  
+  <ResponseField name="shortLink" type="string">
+    The full short link URL
+  </ResponseField>
+  
+  <ResponseField name="url" type="string">
+    The destination URL
+  </ResponseField>
+  
+  <ResponseField name="partnerId" type="string | null">
+    The partner ID if applicable
+  </ResponseField>
+  
+  <ResponseField name="programId" type="string | null">
+    The program ID if applicable
+  </ResponseField>
+  
+  <ResponseField name="tenantId" type="string | null">
+    The tenant ID if applicable
+  </ResponseField>
+  
+  <ResponseField name="externalId" type="string | null">
+    The external ID if applicable
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="customer" type="object">
+  <ResponseField name="name" type="string | null">
+    The name of the customer
+  </ResponseField>
+  
+  <ResponseField name="email" type="string | null">
+    The email of the customer
+  </ResponseField>
+  
+  <ResponseField name="avatar" type="string | null">
+    The avatar URL of the customer
+  </ResponseField>
+  
+  <ResponseField name="externalId" type="string | null">
+    The external ID of the customer
+  </ResponseField>
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.dub.co/track/lead \
+  -H "Authorization: Bearer DUB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clickId": "cm2xyz123abc",
+    "eventName": "Sign up",
+    "customerExternalId": "user_123456",
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com"
+  }'
+```
+
+```typescript TypeScript SDK
+import { Dub } from 'dub';
+
+const dub = new Dub({
+  token: process.env.DUB_API_KEY,
+});
+
+const response = await dub.track.lead({
+  clickId: 'cm2xyz123abc',
+  eventName: 'Sign up',
+  customerExternalId: 'user_123456',
+  customerName: 'John Doe',
+  customerEmail: 'john@example.com',
+});
+```
+
+```python Python SDK
+from dub import Dub
+
+dub = Dub(token=os.environ["DUB_API_KEY"])
+
+response = dub.track.lead(
+    click_id="cm2xyz123abc",
+    event_name="Sign up",
+    customer_external_id="user_123456",
+    customer_name="John Doe",
+    customer_email="john@example.com"
+)
+```
+
+```go Go SDK
+import (
+    "context"
+    "github.com/dubinc/dub-go"
+    "github.com/dubinc/dub-go/models/operations"
+)
+
+client := dub.New(
+    dub.WithSecurity(os.Getenv("DUB_API_KEY")),
+)
+
+response, err := client.Track.Lead(context.Background(), &operations.TrackLeadRequest{
+    ClickID: "cm2xyz123abc",
+    EventName: "Sign up",
+    CustomerExternalID: "user_123456",
+    CustomerName: dub.String("John Doe"),
+    CustomerEmail: dub.String("john@example.com"),
+})
+```
+
+</CodeGroup>
+
+## Response Example
+
+```json
+{
+  "click": {
+    "id": "cm2xyz123abc"
+  },
+  "link": {
+    "id": "clx1y2z3a4b5c6d7e8f9",
+    "domain": "dub.sh",
+    "key": "example",
+    "shortLink": "https://dub.sh/example",
+    "url": "https://example.com",
+    "partnerId": null,
+    "programId": null,
+    "tenantId": null,
+    "externalId": null
+  },
+  "customer": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "avatar": null,
+    "externalId": "user_123456"
+  }
+}
+```

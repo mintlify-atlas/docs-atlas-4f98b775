@@ -1,0 +1,662 @@
+---
+title: "Deployment"
+description: "Deploy your self-hosted Dub instance to production"
+---
+
+## Overview
+
+This guide covers deploying Dub to various hosting platforms. Dub is a Next.js application that can be deployed to any platform that supports Node.js.
+
+## Deployment Requirements
+
+### System Requirements
+
+- Node.js 23.11.0 or higher
+- pnpm 9.15.9 or higher
+- 2GB+ RAM (4GB+ recommended)
+- 10GB+ disk space
+- MySQL 8.0+ database
+
+### External Services
+
+Ensure you have the following services configured:
+
+- **MySQL Database** - See [Database Setup](/self-hosting/database-setup)
+- **Tinybird** - For analytics
+- **Upstash Redis** - For caching
+- **Upstash QStash** - For background jobs
+- **Email Service** - Resend or SMTP
+- **Domain Provider** - For custom domains
+
+## Vercel (Recommended)
+
+Vercel is the recommended platform for deploying Next.js applications, including Dub.
+
+<Steps>
+  <Step title="Connect Repository">
+    1. Push your Dub fork to GitHub
+    2. Go to [vercel.com/new](https://vercel.com/new)
+    3. Import your repository
+    4. Select the `apps/web` directory as the root
+  </Step>
+
+  <Step title="Configure Build Settings">
+    Set the following build configuration:
+
+    - **Framework Preset:** Next.js
+    - **Root Directory:** `apps/web`
+    - **Build Command:** `cd ../.. && pnpm install && pnpm build --filter=web`
+    - **Install Command:** `pnpm install`
+    - **Output Directory:** `.next`
+  </Step>
+
+  <Step title="Set Environment Variables">
+    Add all required environment variables in Vercel project settings.
+
+    See [Environment Variables](/self-hosting/environment-variables) for the complete list.
+
+    <Note>
+      You don't need to set `NEXTAUTH_URL` on Vercel - it's automatically detected.
+    </Note>
+  </Step>
+
+  <Step title="Configure Domains">
+    1. Add your custom domain in Vercel project settings
+    2. Update DNS records as instructed
+    3. Wait for SSL certificate provisioning
+  </Step>
+
+  <Step title="Enable Cron Jobs">
+    Vercel automatically detects cron jobs from `vercel.json`.
+
+    Verify cron jobs are enabled in Project Settings → Cron Jobs.
+
+    <Note>
+      Cron jobs require a Vercel Pro plan or higher.
+    </Note>
+  </Step>
+
+  <Step title="Deploy">
+    Click "Deploy" and wait for the build to complete.
+
+    Vercel will:
+    - Install dependencies
+    - Build the application
+    - Deploy to production
+    - Set up automatic deployments for future commits
+  </Step>
+</Steps>
+
+### Vercel Configuration
+
+Dub includes a `vercel.json` configuration file:
+
+```json vercel.json
+{
+  "crons": [
+    {
+      "path": "/api/cron/domains/verify",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/streams/update-workspace-clicks",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/usage",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/aggregate-clicks",
+      "schedule": "0 0 * * *"
+    }
+  ],
+  "functions": {
+    "app/(ee)/api/cron/**/*.ts": {
+      "maxDuration": 600
+    }
+  }
+}
+```
+
+## Railway
+
+Railway provides simple deployment for full-stack applications.
+
+<Steps>
+  <Step title="Create New Project">
+    1. Go to [railway.app](https://railway.app)
+    2. Click "New Project"
+    3. Select "Deploy from GitHub repo"
+    4. Choose your Dub repository
+  </Step>
+
+  <Step title="Configure Service">
+    Add the following configuration:
+
+    ```bash
+    # Root directory
+    apps/web
+
+    # Build command
+    cd ../.. && pnpm install && pnpm build --filter=web
+
+    # Start command
+    cd apps/web && pnpm start
+    ```
+  </Step>
+
+  <Step title="Set Environment Variables">
+    Add all environment variables in Railway service settings.
+
+    Railway provides a PostgreSQL database, but Dub requires MySQL. Add a MySQL service separately.
+  </Step>
+
+  <Step title="Add MySQL Service">
+    1. Click "New" → "Database" → "Add MySQL"
+    2. Copy the connection string
+    3. Add as `DATABASE_URL` environment variable
+  </Step>
+
+  <Step title="Configure Domain">
+    1. Go to service settings
+    2. Add custom domain
+    3. Update DNS records as instructed
+  </Step>
+
+  <Step title="Deploy">
+    Railway automatically deploys when you push to your repository.
+  </Step>
+</Steps>
+
+### Railway Cron Jobs
+
+Railway doesn't have built-in cron support. Use external services:
+
+- **Upstash QStash Schedules** - Set up scheduled HTTP requests
+- **Cron-job.org** - Free cron job service
+- **EasyCron** - Paid cron service with monitoring
+
+Configure scheduled requests to your cron endpoints with the `CRON_SECRET` header.
+
+## Docker Deployment
+
+Deploy Dub using Docker for maximum control.
+
+### Create Dockerfile
+
+Create `Dockerfile` in the repository root:
+
+```dockerfile Dockerfile
+FROM node:23-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json ./apps/web/
+COPY packages ./packages/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Build the application
+FROM base AS builder
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Generate Prisma client
+RUN pnpm --filter=@dub/prisma generate
+
+# Build web app
+RUN pnpm build --filter=web
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy built application
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT 3000
+
+CMD ["node", "apps/web/server.js"]
+```
+
+### Build and Run
+
+```bash
+# Build image
+docker build -t dub .
+
+# Run container
+docker run -d \
+  --name dub \
+  -p 3000:3000 \
+  --env-file .env \
+  dub
+```
+
+### Docker Compose
+
+Create `docker-compose.prod.yml`:
+
+```yaml docker-compose.prod.yml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: dub
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    command:
+      [
+        "--max_connections=1000",
+        "--default-authentication-plugin=mysql_native_password",
+      ]
+
+volumes:
+  mysql_data:
+```
+
+Deploy:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+## AWS EC2
+
+Deploy to Amazon EC2 for full infrastructure control.
+
+<Steps>
+  <Step title="Launch EC2 Instance">
+    1. Choose Ubuntu Server 22.04 LTS
+    2. Instance type: t3.medium or larger
+    3. Configure security group:
+       - Allow SSH (port 22)
+       - Allow HTTP (port 80)
+       - Allow HTTPS (port 443)
+  </Step>
+
+  <Step title="Install Dependencies">
+    SSH into your instance and install Node.js:
+
+    ```bash
+    # Install Node.js 23
+    curl -fsSL https://deb.nodesource.com/setup_23.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+
+    # Install pnpm
+    npm install -g pnpm@9.15.9
+
+    # Install Nginx
+    sudo apt-get install -y nginx
+    ```
+  </Step>
+
+  <Step title="Clone and Build">
+    ```bash
+    # Clone repository
+    git clone https://github.com/yourusername/dub.git
+    cd dub
+
+    # Install dependencies
+    pnpm install
+
+    # Build application
+    cd apps/web
+    pnpm build
+    ```
+  </Step>
+
+  <Step title="Configure Environment">
+    ```bash
+    # Create .env file
+    nano .env
+    # Add all environment variables
+    ```
+  </Step>
+
+  <Step title="Set Up PM2">
+    Use PM2 for process management:
+
+    ```bash
+    # Install PM2
+    npm install -g pm2
+
+    # Start application
+    pm2 start pnpm --name "dub" -- start
+
+    # Set up auto-restart
+    pm2 startup
+    pm2 save
+    ```
+  </Step>
+
+  <Step title="Configure Nginx">
+    Create Nginx configuration:
+
+    ```nginx /etc/nginx/sites-available/dub
+    server {
+        listen 80;
+        server_name yourdomain.com;
+
+        location / {
+            proxy_pass http://localhost:3000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+    ```
+
+    Enable site:
+
+    ```bash
+    sudo ln -s /etc/nginx/sites-available/dub /etc/nginx/sites-enabled/
+    sudo nginx -t
+    sudo systemctl reload nginx
+    ```
+  </Step>
+
+  <Step title="Set Up SSL">
+    Install Certbot for free SSL certificates:
+
+    ```bash
+    sudo apt-get install -y certbot python3-certbot-nginx
+    sudo certbot --nginx -d yourdomain.com
+    ```
+  </Step>
+</Steps>
+
+### EC2 Cron Jobs
+
+Set up cron jobs using crontab:
+
+```bash
+crontab -e
+```
+
+Add cron jobs:
+
+```cron
+# Domain verification - hourly
+0 * * * * curl -H "Authorization: Bearer $CRON_SECRET" https://yourdomain.com/api/cron/domains/verify
+
+# Update workspace clicks - every minute
+* * * * * curl -H "Authorization: Bearer $CRON_SECRET" https://yourdomain.com/api/cron/streams/update-workspace-clicks
+
+# Usage reporting - daily at noon
+0 12 * * * curl -H "Authorization: Bearer $CRON_SECRET" https://yourdomain.com/api/cron/usage
+
+# Aggregate clicks - daily at midnight
+0 0 * * * curl -H "Authorization: Bearer $CRON_SECRET" https://yourdomain.com/api/cron/aggregate-clicks
+```
+
+## DigitalOcean App Platform
+
+<Steps>
+  <Step title="Create New App">
+    1. Go to [DigitalOcean App Platform](https://cloud.digitalocean.com/apps)
+    2. Click "Create App"
+    3. Connect your GitHub repository
+  </Step>
+
+  <Step title="Configure Build">
+    - **Source Directory:** `apps/web`
+    - **Build Command:** `cd ../.. && pnpm install && pnpm build --filter=web`
+    - **Run Command:** `cd apps/web && pnpm start`
+  </Step>
+
+  <Step title="Add Database">
+    Add a managed MySQL database in the same project.
+  </Step>
+
+  <Step title="Set Environment Variables">
+    Add all required environment variables in app settings.
+  </Step>
+
+  <Step title="Deploy">
+    Click "Deploy" and wait for the build to complete.
+  </Step>
+</Steps>
+
+## Render
+
+<Steps>
+  <Step title="Create Web Service">
+    1. Go to [render.com](https://render.com)
+    2. Click "New" → "Web Service"
+    3. Connect your repository
+  </Step>
+
+  <Step title="Configure Service">
+    - **Root Directory:** `apps/web`
+    - **Build Command:** `cd ../.. && pnpm install && pnpm build --filter=web`
+    - **Start Command:** `cd apps/web && pnpm start`
+  </Step>
+
+  <Step title="Set Environment Variables">
+    Add all environment variables in service settings.
+  </Step>
+
+  <Step title="Deploy">
+    Render automatically builds and deploys your application.
+  </Step>
+</Steps>
+
+## Cloudflare Pages
+
+<Warning>
+  Cloudflare Pages has limitations with Next.js API routes and server-side rendering. Use Cloudflare Workers for API routes or choose a different platform.
+</Warning>
+
+## Environment-Specific Configuration
+
+### Production Environment Variables
+
+For production, ensure these are properly configured:
+
+```bash
+# Use production URLs
+NEXTAUTH_URL=https://yourdomain.com
+NEXT_PUBLIC_APP_DOMAIN=yourdomain.com
+
+# Strong secret (32+ characters)
+NEXTAUTH_SECRET=<generate-strong-secret>
+
+# Production database
+DATABASE_URL=<production-mysql-url>
+
+# Production Redis
+UPSTASH_REDIS_REST_URL=<production-redis-url>
+UPSTASH_REDIS_REST_TOKEN=<production-redis-token>
+```
+
+## Cron Jobs Configuration
+
+Dub requires several cron jobs for proper operation:
+
+### Required Cron Jobs
+
+| Endpoint | Schedule | Description |
+|----------|----------|-------------|
+| `/api/cron/domains/verify` | `0 * * * *` | Verify domain DNS records |
+| `/api/cron/email-domains/verify` | `0 * * * *` | Verify email domains |
+| `/api/cron/streams/update-workspace-clicks` | `* * * * *` | Update workspace click counts |
+| `/api/cron/streams/update-partner-stats` | `*/2 * * * *` | Update partner statistics |
+| `/api/cron/usage` | `0 12 * * *` | Generate usage reports |
+| `/api/cron/aggregate-clicks` | `0 0 * * *` | Aggregate daily click data |
+
+### Securing Cron Endpoints
+
+Set `CRON_SECRET` environment variable and include it in cron requests:
+
+```bash
+CRON_SECRET=<random-secret>
+```
+
+Cron job example:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://yourdomain.com/api/cron/usage
+```
+
+## Health Checks
+
+Set up health checks for monitoring:
+
+```bash
+# Basic health check
+curl https://yourdomain.com/api/health
+
+# Database connectivity
+curl https://yourdomain.com/api/health/db
+```
+
+## Monitoring & Logging
+
+### Application Monitoring
+
+Configure Axiom for logging:
+
+```bash
+AXIOM_TOKEN=<your-token>
+AXIOM_DATASET=dub-production
+```
+
+### Uptime Monitoring
+
+Use services like:
+
+- **UptimeRobot** - Free uptime monitoring
+- **Pingdom** - Advanced monitoring and alerts
+- **Better Uptime** - Status pages and incident management
+
+## Scaling Considerations
+
+### Horizontal Scaling
+
+For high traffic:
+
+1. Deploy multiple instances
+2. Use a load balancer (AWS ALB, Cloudflare, etc.)
+3. Ensure session affinity if using in-memory sessions
+4. Use Redis for session storage
+
+### Vertical Scaling
+
+Increase server resources:
+
+- **CPU:** 2+ cores for production
+- **RAM:** 4GB minimum, 8GB+ recommended
+- **Storage:** SSD with 20GB+ free space
+
+### Database Scaling
+
+- Use read replicas for analytics queries
+- Enable query caching
+- Optimize indexes
+- Consider database connection pooling
+
+## Troubleshooting
+
+### Build Failures
+
+```bash
+# Clear cache and rebuild
+find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
+find . -name '.next' -type d -prune -exec rm -rf '{}' +
+pnpm install
+pnpm build
+```
+
+### Runtime Errors
+
+Check logs:
+
+```bash
+# PM2 logs
+pm2 logs dub
+
+# Docker logs
+docker logs dub
+
+# Vercel logs
+vercel logs
+```
+
+### Database Connection Issues
+
+Verify connectivity:
+
+```bash
+# Test connection
+pnpm prisma:studio
+
+# Check environment variables
+env | grep DATABASE_URL
+```
+
+## Production Checklist
+
+- [ ] All environment variables are set
+- [ ] Database is configured and accessible
+- [ ] SSL/TLS certificates are installed
+- [ ] Cron jobs are scheduled and running
+- [ ] Monitoring and logging are configured
+- [ ] Backup procedures are in place
+- [ ] Health checks are configured
+- [ ] Domain DNS is properly configured
+- [ ] Email delivery is tested and working
+- [ ] Rate limiting is enabled (via Edge Config)
+- [ ] Security headers are configured
+- [ ] Application performance is optimized
+
+## Next Steps
+
+- [Configure Environment Variables](/self-hosting/environment-variables)
+- [Database Setup](/self-hosting/database-setup)
+- [Return to Self-Hosting Guide](/self-hosting/guide)

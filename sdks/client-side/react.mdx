@@ -1,0 +1,309 @@
+---
+title: React SDK
+description: Add Dub analytics tracking to React applications with the @dub/analytics package
+---
+
+The `@dub/analytics` package provides React components for tracking clicks and conversions in React applications.
+
+## Installation
+
+Install the package using your preferred package manager:
+
+<CodeGroup>
+```bash npm
+npm install @dub/analytics
+```
+
+```bash pnpm
+pnpm add @dub/analytics
+```
+
+```bash yarn
+yarn add @dub/analytics
+```
+</CodeGroup>
+
+## Quick Start
+
+Add the `<Analytics />` component to your React application:
+
+```jsx
+import { Analytics as DubAnalytics } from '@dub/analytics/react';
+
+export default function App() {
+  return (
+    <div>
+      <h1>My App</h1>
+      {/* Your app content */}
+      <DubAnalytics />
+    </div>
+  );
+}
+```
+
+<Note>
+  The Analytics component should be included once in your application, typically in your root component or layout.
+</Note>
+
+## Configuration Options
+
+Customize the Analytics component with configuration options:
+
+```jsx
+import { Analytics as DubAnalytics } from '@dub/analytics/react';
+
+export default function App() {
+  return (
+    <div>
+      <DubAnalytics
+        apiHost="/api/dub"
+        cookieOptions={{
+          domain: '.yourdomain.com',
+          maxAge: 60 * 60 * 24 * 90, // 90 days
+        }}
+        domainsConfig={{
+          refer: 'refer.yourdomain.com',
+        }}
+      />
+      {/* Your app content */}
+    </div>
+  );
+}
+```
+
+### Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `apiHost` | `string` | Custom API endpoint for tracking requests |
+| `cookieOptions` | `object` | Cookie configuration options |
+| `cookieOptions.domain` | `string` | Cookie domain (e.g., `.yourdomain.com`) |
+| `cookieOptions.maxAge` | `number` | Cookie expiration in seconds |
+| `domainsConfig` | `object` | Domain-specific configuration |
+| `domainsConfig.refer` | `string` | Custom referral domain |
+
+## Tracking Conversions
+
+After installing the Analytics component, track conversions server-side:
+
+### Server Action (Next.js)
+
+```typescript
+"use server";
+
+import { Dub } from "dub";
+import { cookies } from "next/headers";
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+export async function trackSignup(userId: string, email: string) {
+  const cookieStore = await cookies();
+  const dubId = cookieStore.get("dub_id")?.value;
+  
+  if (dubId) {
+    await dub.track.lead({
+      clickId: dubId,
+      eventName: "Sign Up",
+      customerExternalId: userId,
+      customerEmail: email,
+    });
+    
+    // Clear the cookie
+    cookieStore.set("dub_id", "", { expires: new Date(0) });
+  }
+}
+```
+
+### API Route (Next.js)
+
+```typescript
+import { Dub } from "dub";
+import { NextRequest, NextResponse } from "next/server";
+
+const dub = new Dub({ token: process.env.DUB_API_KEY });
+
+export async function POST(req: NextRequest) {
+  const { userId, email } = await req.json();
+  const dubId = req.cookies.get("dub_id")?.value;
+  
+  if (dubId) {
+    await dub.track.lead({
+      clickId: dubId,
+      eventName: "Sign Up",
+      customerExternalId: userId,
+      customerEmail: email,
+    });
+  }
+  
+  const res = NextResponse.json({ success: true });
+  res.cookies.set("dub_id", "", { expires: new Date(0) });
+  return res;
+}
+```
+
+## Integration Examples
+
+### With Authentication
+
+Track conversions automatically when users sign up:
+
+```jsx
+"use client";
+
+import { useUser } from '@/hooks/use-user';
+import { trackSignup } from '@/actions/track-signup';
+import { Analytics as DubAnalytics } from '@dub/analytics/react';
+import { useEffect } from 'react';
+
+export function DubAnalytics() {
+  const { user } = useUser();
+  
+  useEffect(() => {
+    if (!user || user.tracked) return;
+    
+    // Track signup conversion
+    trackSignup(user.id, user.email).then(() => {
+      console.log('Lead tracked successfully');
+    });
+  }, [user]);
+  
+  return <Analytics />;
+}
+```
+
+### With Clerk
+
+Integrate with Clerk authentication:
+
+```jsx
+"use client";
+
+import { trackLead } from '@/actions/track-lead';
+import { useUser } from '@clerk/nextjs';
+import { Analytics, AnalyticsProps } from '@dub/analytics/react';
+import { useEffect } from 'react';
+
+export function DubAnalytics(props: AnalyticsProps) {
+  const { user } = useUser();
+  
+  useEffect(() => {
+    if (!user || user.publicMetadata.dubClickId) return;
+    
+    trackLead({
+      id: user.id,
+      name: user.fullName!,
+      email: user.primaryEmailAddress?.emailAddress,
+      avatar: user.imageUrl,
+    }).then(async (res) => {
+      if (res.ok) await user.reload();
+      else console.error(res.error);
+    });
+  }, [user]);
+  
+  return <Analytics {...props} />;
+}
+```
+
+### With Auth0
+
+Integrate with Auth0 authentication:
+
+```jsx
+import { useAuth0 } from '@auth0/auth0-react';
+import { Analytics as DubAnalytics } from '@dub/analytics/react';
+import { useEffect } from 'react';
+import { trackLead } from '@/lib/track-lead';
+
+export function DubAnalytics() {
+  const { user, isAuthenticated } = useAuth0();
+  
+  useEffect(() => {
+    if (isAuthenticated && user && !user.dub_tracked) {
+      trackLead({
+        userId: user.sub,
+        email: user.email,
+        name: user.name,
+      });
+    }
+  }, [isAuthenticated, user]);
+  
+  return <Analytics />;
+}
+```
+
+## Embed Components
+
+The package also includes embed components for displaying Dub dashboards:
+
+```jsx
+import { DubEmbed } from '@dub/embed-react';
+import { useState, useEffect } from 'react';
+
+export function ReferralDashboard() {
+  const [token, setToken] = useState('');
+  
+  useEffect(() => {
+    // Fetch embed token from your API
+    fetch('/api/create-embed-token')
+      .then(res => res.json())
+      .then(data => setToken(data.token));
+  }, []);
+  
+  return (
+    <DubEmbed 
+      data="referrals" 
+      token={token}
+      options={{
+        theme: 'light',
+        themeOptions: {
+          backgroundColor: '#ffffff',
+        },
+      }}
+    />
+  );
+}
+```
+
+### Embed Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `token` | `string` | Yes | Embed token from your API |
+| `data` | `"referrals" \| "analytics"` | Yes | Type of data to display |
+| `options.theme` | `"light" \| "dark" \| "system"` | No | Theme mode |
+| `options.themeOptions.backgroundColor` | `string` | No | Custom background color |
+| `options.containerStyles` | `CSSProperties` | No | Custom container styles |
+
+## TypeScript Support
+
+The package includes full TypeScript definitions:
+
+```typescript
+import { Analytics, AnalyticsProps } from '@dub/analytics/react';
+import { DubEmbed } from '@dub/embed-react';
+import type { DubEmbedOptions } from '@dub/embed-core';
+
+const analyticsProps: AnalyticsProps = {
+  apiHost: '/api/dub',
+  cookieOptions: {
+    domain: '.example.com',
+  },
+};
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Next.js Integration" icon="N" href="/sdks/client-side/nextjs">
+    Next.js-specific implementation
+  </Card>
+  <Card title="Track Conversions" icon="chart-line" href="/features/conversion-tracking">
+    Learn about conversion tracking
+  </Card>
+  <Card title="Server-Side SDKs" icon="server" href="/sdks/overview">
+    Use server-side SDKs
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the API
+  </Card>
+</CardGroup>
