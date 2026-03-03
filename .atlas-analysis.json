@@ -1,0 +1,214 @@
+{
+  "projectType": "saas",
+  "projectName": "Dub",
+  "projectDescription": "The modern link attribution platform for short links, conversion tracking, and affiliate programs.",
+  "theme": "mint",
+  "primaryColor": "#8B5CF6",
+  "lightColor": "#A78BFA",
+  "darkColor": "#7C3AED",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/link-management",
+              "features/analytics",
+              "features/custom-domains",
+              "features/qr-codes",
+              "features/conversion-tracking",
+              "features/affiliate-programs"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/workspaces",
+              "guides/links",
+              "guides/tracking-conversions",
+              "guides/integration-guides"
+            ]
+          },
+          {
+            "group": "Self-Hosting",
+            "pages": [
+              "self-hosting/guide",
+              "self-hosting/environment-variables",
+              "self-hosting/database-setup",
+              "self-hosting/deployment"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/overview",
+              "integrations/analytics-platforms",
+              "integrations/webhooks"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/authentication",
+              "api-reference/rate-limits",
+              "api-reference/errors"
+            ]
+          },
+          {
+            "group": "Links",
+            "pages": [
+              "api-reference/links/create",
+              "api-reference/links/retrieve",
+              "api-reference/links/list",
+              "api-reference/links/update",
+              "api-reference/links/delete",
+              "api-reference/links/bulk-create",
+              "api-reference/links/bulk-update",
+              "api-reference/links/bulk-delete"
+            ]
+          },
+          {
+            "group": "Analytics",
+            "pages": [
+              "api-reference/analytics/retrieve"
+            ]
+          },
+          {
+            "group": "Events",
+            "pages": [
+              "api-reference/events/list"
+            ]
+          },
+          {
+            "group": "Domains",
+            "pages": [
+              "api-reference/domains/create",
+              "api-reference/domains/list",
+              "api-reference/domains/update",
+              "api-reference/domains/delete"
+            ]
+          },
+          {
+            "group": "Tags",
+            "pages": [
+              "api-reference/tags/create",
+              "api-reference/tags/list",
+              "api-reference/tags/update",
+              "api-reference/tags/delete"
+            ]
+          },
+          {
+            "group": "Folders",
+            "pages": [
+              "api-reference/folders/create",
+              "api-reference/folders/list",
+              "api-reference/folders/update",
+              "api-reference/folders/delete"
+            ]
+          },
+          {
+            "group": "Tracking",
+            "pages": [
+              "api-reference/track/lead",
+              "api-reference/track/sale"
+            ]
+          },
+          {
+            "group": "Customers",
+            "pages": [
+              "api-reference/customers/create",
+              "api-reference/customers/retrieve",
+              "api-reference/customers/list",
+              "api-reference/customers/update",
+              "api-reference/customers/delete"
+            ]
+          },
+          {
+            "group": "QR Codes",
+            "pages": [
+              "api-reference/qr-codes/generate"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "SDKs",
+        "groups": [
+          {
+            "group": "Official SDKs",
+            "pages": [
+              "sdks/overview",
+              "sdks/typescript",
+              "sdks/python",
+              "sdks/go",
+              "sdks/ruby"
+            ]
+          },
+          {
+            "group": "Client-Side",
+            "pages": [
+              "sdks/client-side/overview",
+              "sdks/client-side/analytics-script",
+              "sdks/client-side/react",
+              "sdks/client-side/nextjs"
+            ]
+          },
+          {
+            "group": "CLI",
+            "pages": [
+              "sdks/cli/overview",
+              "sdks/cli/installation",
+              "sdks/cli/commands"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Short link generation with custom domains",
+    "Advanced analytics and click tracking",
+    "QR code generation",
+    "Conversion tracking (leads and sales)",
+    "Affiliate program management",
+    "Team workspaces and collaboration",
+    "Custom branded domains",
+    "Webhook integrations",
+    "REST API with SDKs",
+    "Self-hosting support"
+  ],
+  "publicApiSurface": [
+    "POST /links - Create short link",
+    "GET /links - List links",
+    "GET /links/:id - Retrieve link",
+    "PATCH /links/:id - Update link",
+    "DELETE /links/:id - Delete link",
+    "GET /analytics - Retrieve analytics",
+    "POST /track/lead - Track lead conversion",
+    "POST /track/sale - Track sale conversion",
+    "GET /domains - List domains",
+    "POST /domains - Create domain",
+    "GET /tags - List tags",
+    "POST /tags - Create tag",
+    "GET /folders - List folders",
+    "POST /folders - Create folder",
+    "GET /customers - List customers",
+    "POST /customers - Create customer",
+    "GET /qr - Generate QR code"
+  ]
+}
